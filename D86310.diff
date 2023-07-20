@@ -1,0 +1,3454 @@
+diff --git a/clang/lib/Basic/Targets/OSTargets.h b/clang/lib/Basic/Targets/OSTargets.h
+--- a/clang/lib/Basic/Targets/OSTargets.h
++++ b/clang/lib/Basic/Targets/OSTargets.h
+@@ -870,10 +870,10 @@
+       // Handled in ARM's setABI().
+     } else if (Triple.getArch() == llvm::Triple::x86) {
+       this->resetDataLayout("e-m:e-p:32:32-p270:32:32-p271:32:32-p272:64:64-"
+-                            "i64:64-n8:16:32-S128");
++                            "i64:64-i128:128-n8:16:32-S128");
+     } else if (Triple.getArch() == llvm::Triple::x86_64) {
+       this->resetDataLayout("e-m:e-p:32:32-p270:32:32-p271:32:32-p272:64:64-"
+-                            "i64:64-n8:16:32:64-S128");
++                            "i64:64-i128:128-n8:16:32:64-S128");
+     } else if (Triple.getArch() == llvm::Triple::mipsel) {
+       // Handled on mips' setDataLayout.
+     } else {
+diff --git a/clang/lib/Basic/Targets/X86.h b/clang/lib/Basic/Targets/X86.h
+--- a/clang/lib/Basic/Targets/X86.h
++++ b/clang/lib/Basic/Targets/X86.h
+@@ -426,13 +426,12 @@
+     LongDoubleWidth = 96;
+     LongDoubleAlign = 32;
+     SuitableAlign = 128;
+-    resetDataLayout(
+-        Triple.isOSBinFormatMachO()
+-            ? "e-m:o-p:32:32-p270:32:32-p271:32:32-p272:64:64-f64:32:64-"
+-              "f80:32-n8:16:32-S128"
+-            : "e-m:e-p:32:32-p270:32:32-p271:32:32-p272:64:64-f64:32:64-"
+-              "f80:32-n8:16:32-S128",
+-        Triple.isOSBinFormatMachO() ? "_" : "");
++    resetDataLayout(Triple.isOSBinFormatMachO()
++                        ? "e-m:o-p:32:32-p270:32:32-p271:32:32-p272:64:64-i128:"
++                          "128-f64:32:64-f80:32-n8:16:32-S128"
++                        : "e-m:e-p:32:32-p270:32:32-p271:32:32-p272:64:64-i128:"
++                          "128-f64:32:64-f80:32-n8:16:32-S128",
++                    Triple.isOSBinFormatMachO() ? "_" : "");
+     SizeType = UnsignedInt;
+     PtrDiffType = SignedInt;
+     IntPtrType = SignedInt;
+@@ -537,8 +536,9 @@
+       UseSignedCharForObjCBool = false;
+     SizeType = UnsignedLong;
+     IntPtrType = SignedLong;
+-    resetDataLayout("e-m:o-p:32:32-p270:32:32-p271:32:32-p272:64:64-f64:32:64-"
+-                    "f80:128-n8:16:32-S128", "_");
++    resetDataLayout("e-m:o-p:32:32-p270:32:32-p271:32:32-p272:64:64-i128:128-"
++                    "f64:32:64-f80:128-n8:16:32-S128",
++                    "_");
+     HasAlignMac68kSupport = true;
+   }
+ 
+@@ -565,7 +565,7 @@
+         getTriple().isOSWindows() && getTriple().isOSBinFormatCOFF();
+     bool IsMSVC = getTriple().isWindowsMSVCEnvironment();
+     std::string Layout = IsWinCOFF ? "e-m:x" : "e-m:e";
+-    Layout += "-p:32:32-p270:32:32-p271:32:32-p272:64:64-i64:64-";
++    Layout += "-p:32:32-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-";
+     Layout += IsMSVC ? "f80:128" : "f80:32";
+     Layout += "-n8:16:32-a:0:32-S32";
+     resetDataLayout(Layout, IsWinCOFF ? "_" : "");
+@@ -616,8 +616,8 @@
+       : X86_32TargetInfo(Triple, Opts) {
+     this->WCharType = TargetInfo::UnsignedShort;
+     DoubleAlign = LongLongAlign = 64;
+-    resetDataLayout("e-m:x-p:32:32-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:"
+-                    "32-n8:16:32-a:0:32-S32",
++    resetDataLayout("e-m:x-p:32:32-p270:32:32-p271:32:32-p272:64:64-i64:64-"
++                    "i128:128-f80:32-n8:16:32-a:0:32-S32",
+                     "_");
+   }
+ 
+@@ -655,8 +655,8 @@
+       : X86_32TargetInfo(Triple, Opts) {
+     LongDoubleWidth = 64;
+     LongDoubleFormat = &llvm::APFloat::IEEEdouble();
+-    resetDataLayout("e-m:e-p:32:32-p270:32:32-p271:32:32-p272:64:64-i64:32-f64:"
+-                    "32-f128:32-n8:16:32-a:0:32-S32");
++    resetDataLayout("e-m:e-p:32:32-p270:32:32-p271:32:32-p272:64:64-i64:32-"
++                    "f64:32-f128:32-n8:16:32-a:0:32-S32");
+     WIntType = UnsignedInt;
+   }
+ 
+@@ -716,11 +716,11 @@
+ 
+     // Pointers are 32-bit in x32.
+     resetDataLayout(IsX32 ? "e-m:e-p:32:32-p270:32:32-p271:32:32-p272:64:64-"
+-                            "i64:64-f80:128-n8:16:32:64-S128"
+-                          : IsWinCOFF ? "e-m:w-p270:32:32-p271:32:32-p272:64:"
+-                                        "64-i64:64-f80:128-n8:16:32:64-S128"
+-                                      : "e-m:e-p270:32:32-p271:32:32-p272:64:"
+-                                        "64-i64:64-f80:128-n8:16:32:64-S128");
++                            "i64:64-i128:128-f80:128-n8:16:32:64-S128"
++                    : IsWinCOFF ? "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:"
++                                  "64-i128:128-f80:128-n8:16:32:64-S128"
++                                : "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:"
++                                  "64-i128:128-f80:128-n8:16:32:64-S128");
+ 
+     // Use fpret only for long double.
+     RealTypeUsesObjCFPRetMask = (unsigned)FloatModeKind::LongDouble;
+@@ -917,8 +917,9 @@
+     llvm::Triple T = llvm::Triple(Triple);
+     if (T.isiOS())
+       UseSignedCharForObjCBool = false;
+-    resetDataLayout("e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:"
+-                    "16:32:64-S128", "_");
++    resetDataLayout("e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-"
++                    "f80:128-n8:16:32:64-S128",
++                    "_");
+   }
+ 
+   bool handleTargetFeatures(std::vector<std::string> &Features,
+diff --git a/clang/test/CodeGen/target-data.c b/clang/test/CodeGen/target-data.c
+--- a/clang/test/CodeGen/target-data.c
++++ b/clang/test/CodeGen/target-data.c
+@@ -1,26 +1,26 @@
+ // RUN: %clang_cc1 -triple i686-unknown-unknown -emit-llvm -o - %s | \
+ // RUN:     FileCheck --check-prefix=I686-UNKNOWN %s
+-// I686-UNKNOWN: target datalayout = "e-m:e-p:32:32-p270:32:32-p271:32:32-p272:64:64-f64:32:64-f80:32-n8:16:32-S128"
++// I686-UNKNOWN: target datalayout = "e-m:e-p:32:32-p270:32:32-p271:32:32-p272:64:64-i128:128-f64:32:64-f80:32-n8:16:32-S128"
+ 
+ // RUN: %clang_cc1 -triple i686-apple-darwin9 -emit-llvm -o - %s | \
+ // RUN:     FileCheck --check-prefix=I686-DARWIN %s
+-// I686-DARWIN: target datalayout = "e-m:o-p:32:32-p270:32:32-p271:32:32-p272:64:64-f64:32:64-f80:128-n8:16:32-S128"
++// I686-DARWIN: target datalayout = "e-m:o-p:32:32-p270:32:32-p271:32:32-p272:64:64-i128:128-f64:32:64-f80:128-n8:16:32-S128"
+ 
+ // RUN: %clang_cc1 -triple i686-unknown-win32 -emit-llvm -o - %s | \
+ // RUN:     FileCheck --check-prefix=I686-WIN32 %s
+-// I686-WIN32: target datalayout = "e-m:x-p:32:32-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32-a:0:32-S32"
++// I686-WIN32: target datalayout = "e-m:x-p:32:32-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32-a:0:32-S32"
+ 
+ // RUN: %clang_cc1 -triple i686-unknown-cygwin -emit-llvm -o - %s | \
+ // RUN:     FileCheck --check-prefix=I686-CYGWIN %s
+-// I686-CYGWIN: target datalayout = "e-m:x-p:32:32-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:32-n8:16:32-a:0:32-S32"
++// I686-CYGWIN: target datalayout = "e-m:x-p:32:32-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:32-n8:16:32-a:0:32-S32"
+ 
+ // RUN: %clang_cc1 -triple i686-pc-macho -emit-llvm -o - %s | \
+ // RUN:     FileCheck --check-prefix=I686-MACHO %s
+-// I686-MACHO: target datalayout = "e-m:o-p:32:32-p270:32:32-p271:32:32-p272:64:64-f64:32:64-f80:32-n8:16:32-S128"
++// I686-MACHO: target datalayout = "e-m:o-p:32:32-p270:32:32-p271:32:32-p272:64:64-i128:128-f64:32:64-f80:32-n8:16:32-S128"
+ 
+ // RUN: %clang_cc1 -triple x86_64-unknown-unknown -emit-llvm -o - %s | \
+ // RUN:     FileCheck --check-prefix=X86_64 %s
+-// X86_64: target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
++// X86_64: target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128"
+ 
+ // RUN: %clang_cc1 -triple xcore-unknown-unknown -emit-llvm -o - %s | \
+ // RUN:     FileCheck --check-prefix=XCORE %s
+@@ -92,11 +92,11 @@
+ 
+ // RUN: %clang_cc1 -triple i686-nacl -o - -emit-llvm %s | \
+ // RUN: FileCheck %s -check-prefix=I686-NACL
+-// I686-NACL: target datalayout = "e-m:e-p:32:32-p270:32:32-p271:32:32-p272:64:64-i64:64-n8:16:32-S128"
++// I686-NACL: target datalayout = "e-m:e-p:32:32-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n8:16:32-S128"
+ 
+ // RUN: %clang_cc1 -triple x86_64-nacl -o - -emit-llvm %s | \
+ // RUN: FileCheck %s -check-prefix=X86_64-NACL
+-// X86_64-NACL: target datalayout = "e-m:e-p:32:32-p270:32:32-p271:32:32-p272:64:64-i64:64-n8:16:32:64-S128"
++// X86_64-NACL: target datalayout = "e-m:e-p:32:32-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n8:16:32:64-S128"
+ 
+ // RUN: %clang_cc1 -triple arm-nacl -o - -emit-llvm %s | \
+ // RUN: FileCheck %s -check-prefix=ARM-NACL
+diff --git a/llvm/lib/IR/AutoUpgrade.cpp b/llvm/lib/IR/AutoUpgrade.cpp
+--- a/llvm/lib/IR/AutoUpgrade.cpp
++++ b/llvm/lib/IR/AutoUpgrade.cpp
+@@ -5213,13 +5213,29 @@
+   // If the datalayout matches the expected format, add pointer size address
+   // spaces to the datalayout.
+   std::string AddrSpaces = "-p270:32:32-p271:32:32-p272:64:64";
+-  if (!DL.contains(AddrSpaces)) {
++  if (StringRef Ref = Res; !Ref.contains(AddrSpaces)) {
+     SmallVector<StringRef, 4> Groups;
+     Regex R("(e-m:[a-z](-p:32:32)?)(-[if]64:.*$)");
+-    if (R.match(DL, &Groups))
++    if (R.match(Res, &Groups))
+       Res = (Groups[1] + AddrSpaces + Groups[3]).str();
+   }
+ 
++  // i128 values need to be 16-byte-aligned. LLVM already called into libgcc
++  // for i128 operations prior to this being reflected in the data layout, and
++  // clang mostly produced LLVM IR that already aligned i128 to 16 byte
++  // boundaries, so although this is a breaking change, the upgrade is expected
++  // to fix more IR than it breaks.
++  // Intel MCU is an exception and uses 4-byte-alignment.
++  if (!T.isOSIAMCU()) {
++    std::string I128 = "-i128:128";
++    if (StringRef Ref = Res; !Ref.contains(I128)) {
++      SmallVector<StringRef, 4> Groups;
++      Regex R("(.*-i64:64)(-.*)");
++      if (R.match(Res, &Groups))
++        Res = (Groups[1] + I128 + Groups[2]).str();
++    }
++  }
++
+   // For 32-bit MSVC targets, raise the alignment of f80 values to 16 bytes.
+   // Raising the alignment is safe because Clang did not produce f80 values in
+   // the MSVC environment before this upgrade was added.
+diff --git a/llvm/lib/Target/X86/X86TargetMachine.cpp b/llvm/lib/Target/X86/X86TargetMachine.cpp
+--- a/llvm/lib/Target/X86/X86TargetMachine.cpp
++++ b/llvm/lib/Target/X86/X86TargetMachine.cpp
+@@ -132,12 +132,14 @@
+   Ret += "-p270:32:32-p271:32:32-p272:64:64";
+ 
+   // Some ABIs align 64 bit integers and doubles to 64 bits, others to 32.
++  // 128 bit integers are not specified in the 32-bit ABIs but are used
++  // internally for lowering f128, so we match the alignment to that.
+   if (TT.isArch64Bit() || TT.isOSWindows() || TT.isOSNaCl())
+-    Ret += "-i64:64";
++    Ret += "-i64:64-i128:128";
+   else if (TT.isOSIAMCU())
+     Ret += "-i64:32-f64:32";
+   else
+-    Ret += "-f64:32:64";
++    Ret += "-i128:128-f64:32:64";
+ 
+   // Some ABIs align long double to 128 bits, others to 32.
+   if (TT.isOSNaCl() || TT.isOSIAMCU())
+diff --git a/llvm/test/Bitcode/upgrade-datalayout.ll b/llvm/test/Bitcode/upgrade-datalayout.ll
+--- a/llvm/test/Bitcode/upgrade-datalayout.ll
++++ b/llvm/test/Bitcode/upgrade-datalayout.ll
+@@ -5,5 +5,5 @@
+ target datalayout = "e-m:e-p:32:32-i64:64-f80:128-n8:16:32:64-S128"
+ target triple = "x86_64-unknown-linux-gnu"
+ 
+-; CHECK: target datalayout = "e-m:e-p:32:32-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
++; CHECK: target datalayout = "e-m:e-p:32:32-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128"
+ 
+diff --git a/llvm/test/Bitcode/upgrade-datalayout3.ll b/llvm/test/Bitcode/upgrade-datalayout3.ll
+--- a/llvm/test/Bitcode/upgrade-datalayout3.ll
++++ b/llvm/test/Bitcode/upgrade-datalayout3.ll
+@@ -5,4 +5,4 @@
+ target datalayout = "e-m:w-p:32:32-i64:64-f80:32-n8:16:32-S32"
+ target triple = "i686-pc-windows-msvc"
+ 
+-; CHECK: target datalayout = "e-m:w-p:32:32-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32-S32"
++; CHECK: target datalayout = "e-m:w-p:32:32-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32-S32"
+diff --git a/llvm/test/Bitcode/upgrade-datalayout4.ll b/llvm/test/Bitcode/upgrade-datalayout4.ll
+--- a/llvm/test/Bitcode/upgrade-datalayout4.ll
++++ b/llvm/test/Bitcode/upgrade-datalayout4.ll
+@@ -5,4 +5,4 @@
+ target datalayout = "e-m:x-p:32:32-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:32-n8:16:32-a:0:32-S32"
+ target triple = "i686-pc-windows-msvc"
+ 
+-; CHECK: target datalayout = "e-m:x-p:32:32-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32-a:0:32-S32"
++; CHECK: target datalayout = "e-m:x-p:32:32-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32-a:0:32-S32"
+diff --git a/llvm/test/CodeGen/X86/AMX/amx-config.ll b/llvm/test/CodeGen/X86/AMX/amx-config.ll
+--- a/llvm/test/CodeGen/X86/AMX/amx-config.ll
++++ b/llvm/test/CodeGen/X86/AMX/amx-config.ll
+@@ -79,10 +79,10 @@
+ ; AVX1-LABEL: test_api:
+ ; AVX1:       # %bb.0:
+ ; AVX1-NEXT:    vxorps %xmm1, %xmm1, %xmm1
+-; AVX1-NEXT:    movups %xmm1, -{{[0-9]+}}(%rsp)
+-; AVX1-NEXT:    movups %xmm1, -{{[0-9]+}}(%rsp)
+-; AVX1-NEXT:    movups %xmm1, -{{[0-9]+}}(%rsp)
+-; AVX1-NEXT:    movups %xmm1, -{{[0-9]+}}(%rsp)
++; AVX1-NEXT:    vmovups %xmm1, -{{[0-9]+}}(%rsp)
++; AVX1-NEXT:    vmovups %xmm1, -{{[0-9]+}}(%rsp)
++; AVX1-NEXT:    vmovups %xmm1, -{{[0-9]+}}(%rsp)
++; AVX1-NEXT:    vmovups %xmm1, -{{[0-9]+}}(%rsp)
+ ; AVX1-NEXT:    movb $1, -{{[0-9]+}}(%rsp)
+ ; AVX1-NEXT:    movw %dx, -{{[0-9]+}}(%rsp)
+ ; AVX1-NEXT:    movw %dx, -{{[0-9]+}}(%rsp)
+diff --git a/llvm/test/CodeGen/X86/arg-copy-elide.ll b/llvm/test/CodeGen/X86/arg-copy-elide.ll
+--- a/llvm/test/CodeGen/X86/arg-copy-elide.ll
++++ b/llvm/test/CodeGen/X86/arg-copy-elide.ll
+@@ -186,8 +186,8 @@
+ ; CHECK-NEXT:    pushl %ebx
+ ; CHECK-NEXT:    pushl %edi
+ ; CHECK-NEXT:    pushl %esi
+-; CHECK-NEXT:    andl $-8, %esp
+-; CHECK-NEXT:    subl $32, %esp
++; CHECK-NEXT:    andl $-16, %esp
++; CHECK-NEXT:    subl $48, %esp
+ ; CHECK-NEXT:    movl 12(%ebp), %eax
+ ; CHECK-NEXT:    movl %eax, {{[-0-9]+}}(%e{{[sb]}}p) # 4-byte Spill
+ ; CHECK-NEXT:    movl 16(%ebp), %ebx
+diff --git a/llvm/test/CodeGen/X86/atomic-idempotent.ll b/llvm/test/CodeGen/X86/atomic-idempotent.ll
+--- a/llvm/test/CodeGen/X86/atomic-idempotent.ll
++++ b/llvm/test/CodeGen/X86/atomic-idempotent.ll
+@@ -182,12 +182,10 @@
+ ; X86-SSE2-NEXT:    .cfi_offset %ebp, -8
+ ; X86-SSE2-NEXT:    movl %esp, %ebp
+ ; X86-SSE2-NEXT:    .cfi_def_cfa_register %ebp
+-; X86-SSE2-NEXT:    pushl %edi
+ ; X86-SSE2-NEXT:    pushl %esi
+-; X86-SSE2-NEXT:    andl $-8, %esp
+-; X86-SSE2-NEXT:    subl $16, %esp
+-; X86-SSE2-NEXT:    .cfi_offset %esi, -16
+-; X86-SSE2-NEXT:    .cfi_offset %edi, -12
++; X86-SSE2-NEXT:    andl $-16, %esp
++; X86-SSE2-NEXT:    subl $32, %esp
++; X86-SSE2-NEXT:    .cfi_offset %esi, -12
+ ; X86-SSE2-NEXT:    movl 8(%ebp), %esi
+ ; X86-SSE2-NEXT:    movl %esp, %eax
+ ; X86-SSE2-NEXT:    pushl $0
+@@ -198,18 +196,11 @@
+ ; X86-SSE2-NEXT:    pushl %eax
+ ; X86-SSE2-NEXT:    calll __sync_fetch_and_or_16
+ ; X86-SSE2-NEXT:    addl $20, %esp
+-; X86-SSE2-NEXT:    movl (%esp), %eax
+-; X86-SSE2-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X86-SSE2-NEXT:    movl {{[0-9]+}}(%esp), %edx
+-; X86-SSE2-NEXT:    movl {{[0-9]+}}(%esp), %edi
+-; X86-SSE2-NEXT:    movl %edi, 8(%esi)
+-; X86-SSE2-NEXT:    movl %edx, 12(%esi)
+-; X86-SSE2-NEXT:    movl %eax, (%esi)
+-; X86-SSE2-NEXT:    movl %ecx, 4(%esi)
++; X86-SSE2-NEXT:    movaps (%esp), %xmm0
++; X86-SSE2-NEXT:    movaps %xmm0, (%esi)
+ ; X86-SSE2-NEXT:    movl %esi, %eax
+-; X86-SSE2-NEXT:    leal -8(%ebp), %esp
++; X86-SSE2-NEXT:    leal -4(%ebp), %esp
+ ; X86-SSE2-NEXT:    popl %esi
+-; X86-SSE2-NEXT:    popl %edi
+ ; X86-SSE2-NEXT:    popl %ebp
+ ; X86-SSE2-NEXT:    .cfi_def_cfa %esp, 4
+ ; X86-SSE2-NEXT:    retl $4
+@@ -223,7 +214,7 @@
+ ; X86-SLM-NEXT:    .cfi_def_cfa_register %ebp
+ ; X86-SLM-NEXT:    pushl %edi
+ ; X86-SLM-NEXT:    pushl %esi
+-; X86-SLM-NEXT:    andl $-8, %esp
++; X86-SLM-NEXT:    andl $-16, %esp
+ ; X86-SLM-NEXT:    subl $16, %esp
+ ; X86-SLM-NEXT:    .cfi_offset %esi, -16
+ ; X86-SLM-NEXT:    .cfi_offset %edi, -12
+@@ -263,7 +254,7 @@
+ ; X86-ATOM-NEXT:    .cfi_def_cfa_register %ebp
+ ; X86-ATOM-NEXT:    pushl %edi
+ ; X86-ATOM-NEXT:    pushl %esi
+-; X86-ATOM-NEXT:    andl $-8, %esp
++; X86-ATOM-NEXT:    andl $-16, %esp
+ ; X86-ATOM-NEXT:    leal -{{[0-9]+}}(%esp), %esp
+ ; X86-ATOM-NEXT:    .cfi_offset %esi, -16
+ ; X86-ATOM-NEXT:    .cfi_offset %edi, -12
+@@ -528,8 +519,8 @@
+ ; X86-SSE2-NEXT:    .cfi_offset %ebp, -8
+ ; X86-SSE2-NEXT:    movl %esp, %ebp
+ ; X86-SSE2-NEXT:    .cfi_def_cfa_register %ebp
+-; X86-SSE2-NEXT:    andl $-8, %esp
+-; X86-SSE2-NEXT:    subl $16, %esp
++; X86-SSE2-NEXT:    andl $-16, %esp
++; X86-SSE2-NEXT:    subl $32, %esp
+ ; X86-SSE2-NEXT:    movl %esp, %eax
+ ; X86-SSE2-NEXT:    pushl $0
+ ; X86-SSE2-NEXT:    pushl $0
+@@ -551,8 +542,8 @@
+ ; X86-SLM-NEXT:    .cfi_offset %ebp, -8
+ ; X86-SLM-NEXT:    movl %esp, %ebp
+ ; X86-SLM-NEXT:    .cfi_def_cfa_register %ebp
+-; X86-SLM-NEXT:    andl $-8, %esp
+-; X86-SLM-NEXT:    subl $16, %esp
++; X86-SLM-NEXT:    andl $-16, %esp
++; X86-SLM-NEXT:    subl $32, %esp
+ ; X86-SLM-NEXT:    movl 8(%ebp), %eax
+ ; X86-SLM-NEXT:    movl %esp, %ecx
+ ; X86-SLM-NEXT:    pushl $0
+@@ -575,7 +566,7 @@
+ ; X86-ATOM-NEXT:    .cfi_offset %ebp, -8
+ ; X86-ATOM-NEXT:    leal (%esp), %ebp
+ ; X86-ATOM-NEXT:    .cfi_def_cfa_register %ebp
+-; X86-ATOM-NEXT:    andl $-8, %esp
++; X86-ATOM-NEXT:    andl $-16, %esp
+ ; X86-ATOM-NEXT:    leal -{{[0-9]+}}(%esp), %esp
+ ; X86-ATOM-NEXT:    movl 8(%ebp), %eax
+ ; X86-ATOM-NEXT:    movl %esp, %ecx
+diff --git a/llvm/test/CodeGen/X86/atomic-non-integer.ll b/llvm/test/CodeGen/X86/atomic-non-integer.ll
+--- a/llvm/test/CodeGen/X86/atomic-non-integer.ll
++++ b/llvm/test/CodeGen/X86/atomic-non-integer.ll
+@@ -157,8 +157,8 @@
+ ;
+ ; X86-AVX-LABEL: store_fp128:
+ ; X86-AVX:       # %bb.0:
+-; X86-AVX-NEXT:    subl $44, %esp
+-; X86-AVX-NEXT:    .cfi_def_cfa_offset 48
++; X86-AVX-NEXT:    subl $60, %esp
++; X86-AVX-NEXT:    .cfi_def_cfa_offset 64
+ ; X86-AVX-NEXT:    vmovaps {{[0-9]+}}(%esp), %xmm0
+ ; X86-AVX-NEXT:    movl {{[0-9]+}}(%esp), %eax
+ ; X86-AVX-NEXT:    movl %eax, {{[0-9]+}}(%esp)
+@@ -166,7 +166,7 @@
+ ; X86-AVX-NEXT:    leal {{[0-9]+}}(%esp), %eax
+ ; X86-AVX-NEXT:    movl %eax, (%esp)
+ ; X86-AVX-NEXT:    calll __sync_lock_test_and_set_16
+-; X86-AVX-NEXT:    addl $40, %esp
++; X86-AVX-NEXT:    addl $56, %esp
+ ; X86-AVX-NEXT:    .cfi_def_cfa_offset 4
+ ; X86-AVX-NEXT:    retl
+ ;
+@@ -394,67 +394,111 @@
+ }
+ 
+ define fp128 @load_fp128(ptr %fptr) {
+-; X86-SSE-LABEL: load_fp128:
+-; X86-SSE:       # %bb.0:
+-; X86-SSE-NEXT:    pushl %edi
+-; X86-SSE-NEXT:    .cfi_def_cfa_offset 8
+-; X86-SSE-NEXT:    pushl %esi
+-; X86-SSE-NEXT:    .cfi_def_cfa_offset 12
+-; X86-SSE-NEXT:    subl $20, %esp
+-; X86-SSE-NEXT:    .cfi_def_cfa_offset 32
+-; X86-SSE-NEXT:    .cfi_offset %esi, -12
+-; X86-SSE-NEXT:    .cfi_offset %edi, -8
+-; X86-SSE-NEXT:    movl {{[0-9]+}}(%esp), %esi
+-; X86-SSE-NEXT:    subl $8, %esp
+-; X86-SSE-NEXT:    .cfi_adjust_cfa_offset 8
+-; X86-SSE-NEXT:    leal {{[0-9]+}}(%esp), %eax
+-; X86-SSE-NEXT:    pushl $0
+-; X86-SSE-NEXT:    .cfi_adjust_cfa_offset 4
+-; X86-SSE-NEXT:    pushl $0
+-; X86-SSE-NEXT:    .cfi_adjust_cfa_offset 4
+-; X86-SSE-NEXT:    pushl $0
+-; X86-SSE-NEXT:    .cfi_adjust_cfa_offset 4
+-; X86-SSE-NEXT:    pushl $0
+-; X86-SSE-NEXT:    .cfi_adjust_cfa_offset 4
+-; X86-SSE-NEXT:    pushl $0
+-; X86-SSE-NEXT:    .cfi_adjust_cfa_offset 4
+-; X86-SSE-NEXT:    pushl $0
+-; X86-SSE-NEXT:    .cfi_adjust_cfa_offset 4
+-; X86-SSE-NEXT:    pushl $0
+-; X86-SSE-NEXT:    .cfi_adjust_cfa_offset 4
+-; X86-SSE-NEXT:    pushl $0
+-; X86-SSE-NEXT:    .cfi_adjust_cfa_offset 4
+-; X86-SSE-NEXT:    pushl {{[0-9]+}}(%esp)
+-; X86-SSE-NEXT:    .cfi_adjust_cfa_offset 4
+-; X86-SSE-NEXT:    pushl %eax
+-; X86-SSE-NEXT:    .cfi_adjust_cfa_offset 4
+-; X86-SSE-NEXT:    calll __sync_val_compare_and_swap_16
+-; X86-SSE-NEXT:    .cfi_adjust_cfa_offset -4
+-; X86-SSE-NEXT:    addl $44, %esp
+-; X86-SSE-NEXT:    .cfi_adjust_cfa_offset -44
+-; X86-SSE-NEXT:    movl (%esp), %eax
+-; X86-SSE-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X86-SSE-NEXT:    movl {{[0-9]+}}(%esp), %edx
+-; X86-SSE-NEXT:    movl {{[0-9]+}}(%esp), %edi
+-; X86-SSE-NEXT:    movl %edi, 8(%esi)
+-; X86-SSE-NEXT:    movl %edx, 12(%esi)
+-; X86-SSE-NEXT:    movl %eax, (%esi)
+-; X86-SSE-NEXT:    movl %ecx, 4(%esi)
+-; X86-SSE-NEXT:    movl %esi, %eax
+-; X86-SSE-NEXT:    addl $20, %esp
+-; X86-SSE-NEXT:    .cfi_def_cfa_offset 12
+-; X86-SSE-NEXT:    popl %esi
+-; X86-SSE-NEXT:    .cfi_def_cfa_offset 8
+-; X86-SSE-NEXT:    popl %edi
+-; X86-SSE-NEXT:    .cfi_def_cfa_offset 4
+-; X86-SSE-NEXT:    retl $4
++; X86-SSE1-LABEL: load_fp128:
++; X86-SSE1:       # %bb.0:
++; X86-SSE1-NEXT:    pushl %edi
++; X86-SSE1-NEXT:    .cfi_def_cfa_offset 8
++; X86-SSE1-NEXT:    pushl %esi
++; X86-SSE1-NEXT:    .cfi_def_cfa_offset 12
++; X86-SSE1-NEXT:    subl $20, %esp
++; X86-SSE1-NEXT:    .cfi_def_cfa_offset 32
++; X86-SSE1-NEXT:    .cfi_offset %esi, -12
++; X86-SSE1-NEXT:    .cfi_offset %edi, -8
++; X86-SSE1-NEXT:    movl {{[0-9]+}}(%esp), %esi
++; X86-SSE1-NEXT:    subl $8, %esp
++; X86-SSE1-NEXT:    .cfi_adjust_cfa_offset 8
++; X86-SSE1-NEXT:    leal {{[0-9]+}}(%esp), %eax
++; X86-SSE1-NEXT:    pushl $0
++; X86-SSE1-NEXT:    .cfi_adjust_cfa_offset 4
++; X86-SSE1-NEXT:    pushl $0
++; X86-SSE1-NEXT:    .cfi_adjust_cfa_offset 4
++; X86-SSE1-NEXT:    pushl $0
++; X86-SSE1-NEXT:    .cfi_adjust_cfa_offset 4
++; X86-SSE1-NEXT:    pushl $0
++; X86-SSE1-NEXT:    .cfi_adjust_cfa_offset 4
++; X86-SSE1-NEXT:    pushl $0
++; X86-SSE1-NEXT:    .cfi_adjust_cfa_offset 4
++; X86-SSE1-NEXT:    pushl $0
++; X86-SSE1-NEXT:    .cfi_adjust_cfa_offset 4
++; X86-SSE1-NEXT:    pushl $0
++; X86-SSE1-NEXT:    .cfi_adjust_cfa_offset 4
++; X86-SSE1-NEXT:    pushl $0
++; X86-SSE1-NEXT:    .cfi_adjust_cfa_offset 4
++; X86-SSE1-NEXT:    pushl {{[0-9]+}}(%esp)
++; X86-SSE1-NEXT:    .cfi_adjust_cfa_offset 4
++; X86-SSE1-NEXT:    pushl %eax
++; X86-SSE1-NEXT:    .cfi_adjust_cfa_offset 4
++; X86-SSE1-NEXT:    calll __sync_val_compare_and_swap_16
++; X86-SSE1-NEXT:    .cfi_adjust_cfa_offset -4
++; X86-SSE1-NEXT:    addl $44, %esp
++; X86-SSE1-NEXT:    .cfi_adjust_cfa_offset -44
++; X86-SSE1-NEXT:    movl (%esp), %eax
++; X86-SSE1-NEXT:    movl {{[0-9]+}}(%esp), %ecx
++; X86-SSE1-NEXT:    movl {{[0-9]+}}(%esp), %edx
++; X86-SSE1-NEXT:    movl {{[0-9]+}}(%esp), %edi
++; X86-SSE1-NEXT:    movl %edi, 8(%esi)
++; X86-SSE1-NEXT:    movl %edx, 12(%esi)
++; X86-SSE1-NEXT:    movl %eax, (%esi)
++; X86-SSE1-NEXT:    movl %ecx, 4(%esi)
++; X86-SSE1-NEXT:    movl %esi, %eax
++; X86-SSE1-NEXT:    addl $20, %esp
++; X86-SSE1-NEXT:    .cfi_def_cfa_offset 12
++; X86-SSE1-NEXT:    popl %esi
++; X86-SSE1-NEXT:    .cfi_def_cfa_offset 8
++; X86-SSE1-NEXT:    popl %edi
++; X86-SSE1-NEXT:    .cfi_def_cfa_offset 4
++; X86-SSE1-NEXT:    retl $4
++;
++; X86-SSE2-LABEL: load_fp128:
++; X86-SSE2:       # %bb.0:
++; X86-SSE2-NEXT:    pushl %esi
++; X86-SSE2-NEXT:    .cfi_def_cfa_offset 8
++; X86-SSE2-NEXT:    subl $24, %esp
++; X86-SSE2-NEXT:    .cfi_def_cfa_offset 32
++; X86-SSE2-NEXT:    .cfi_offset %esi, -8
++; X86-SSE2-NEXT:    movl {{[0-9]+}}(%esp), %esi
++; X86-SSE2-NEXT:    subl $8, %esp
++; X86-SSE2-NEXT:    .cfi_adjust_cfa_offset 8
++; X86-SSE2-NEXT:    leal {{[0-9]+}}(%esp), %eax
++; X86-SSE2-NEXT:    pushl $0
++; X86-SSE2-NEXT:    .cfi_adjust_cfa_offset 4
++; X86-SSE2-NEXT:    pushl $0
++; X86-SSE2-NEXT:    .cfi_adjust_cfa_offset 4
++; X86-SSE2-NEXT:    pushl $0
++; X86-SSE2-NEXT:    .cfi_adjust_cfa_offset 4
++; X86-SSE2-NEXT:    pushl $0
++; X86-SSE2-NEXT:    .cfi_adjust_cfa_offset 4
++; X86-SSE2-NEXT:    pushl $0
++; X86-SSE2-NEXT:    .cfi_adjust_cfa_offset 4
++; X86-SSE2-NEXT:    pushl $0
++; X86-SSE2-NEXT:    .cfi_adjust_cfa_offset 4
++; X86-SSE2-NEXT:    pushl $0
++; X86-SSE2-NEXT:    .cfi_adjust_cfa_offset 4
++; X86-SSE2-NEXT:    pushl $0
++; X86-SSE2-NEXT:    .cfi_adjust_cfa_offset 4
++; X86-SSE2-NEXT:    pushl {{[0-9]+}}(%esp)
++; X86-SSE2-NEXT:    .cfi_adjust_cfa_offset 4
++; X86-SSE2-NEXT:    pushl %eax
++; X86-SSE2-NEXT:    .cfi_adjust_cfa_offset 4
++; X86-SSE2-NEXT:    calll __sync_val_compare_and_swap_16
++; X86-SSE2-NEXT:    .cfi_adjust_cfa_offset -4
++; X86-SSE2-NEXT:    addl $44, %esp
++; X86-SSE2-NEXT:    .cfi_adjust_cfa_offset -44
++; X86-SSE2-NEXT:    movaps (%esp), %xmm0
++; X86-SSE2-NEXT:    movaps %xmm0, (%esi)
++; X86-SSE2-NEXT:    movl %esi, %eax
++; X86-SSE2-NEXT:    addl $24, %esp
++; X86-SSE2-NEXT:    .cfi_def_cfa_offset 8
++; X86-SSE2-NEXT:    popl %esi
++; X86-SSE2-NEXT:    .cfi_def_cfa_offset 4
++; X86-SSE2-NEXT:    retl $4
+ ;
+ ; X86-AVX-LABEL: load_fp128:
+ ; X86-AVX:       # %bb.0:
+ ; X86-AVX-NEXT:    pushl %esi
+ ; X86-AVX-NEXT:    .cfi_def_cfa_offset 8
+-; X86-AVX-NEXT:    subl $56, %esp
+-; X86-AVX-NEXT:    .cfi_def_cfa_offset 64
++; X86-AVX-NEXT:    subl $72, %esp
++; X86-AVX-NEXT:    .cfi_def_cfa_offset 80
+ ; X86-AVX-NEXT:    .cfi_offset %esi, -8
+ ; X86-AVX-NEXT:    movl {{[0-9]+}}(%esp), %esi
+ ; X86-AVX-NEXT:    movl {{[0-9]+}}(%esp), %eax
+@@ -466,10 +510,10 @@
+ ; X86-AVX-NEXT:    vzeroupper
+ ; X86-AVX-NEXT:    calll __sync_val_compare_and_swap_16
+ ; X86-AVX-NEXT:    subl $4, %esp
+-; X86-AVX-NEXT:    vmovups {{[0-9]+}}(%esp), %xmm0
++; X86-AVX-NEXT:    vmovaps {{[0-9]+}}(%esp), %xmm0
+ ; X86-AVX-NEXT:    vmovaps %xmm0, (%esi)
+ ; X86-AVX-NEXT:    movl %esi, %eax
+-; X86-AVX-NEXT:    addl $56, %esp
++; X86-AVX-NEXT:    addl $72, %esp
+ ; X86-AVX-NEXT:    .cfi_def_cfa_offset 8
+ ; X86-AVX-NEXT:    popl %esi
+ ; X86-AVX-NEXT:    .cfi_def_cfa_offset 4
+diff --git a/llvm/test/CodeGen/X86/atomic-unordered.ll b/llvm/test/CodeGen/X86/atomic-unordered.ll
+--- a/llvm/test/CodeGen/X86/atomic-unordered.ll
++++ b/llvm/test/CodeGen/X86/atomic-unordered.ll
+@@ -322,12 +322,12 @@
+ ; CHECK-O0-NEXT:    .cfi_def_cfa_offset 64
+ ; CHECK-O0-NEXT:    movq %rdi, %rax
+ ; CHECK-O0-NEXT:    movq %rax, {{[-0-9]+}}(%r{{[sb]}}p) # 8-byte Spill
+-; CHECK-O0-NEXT:    movq %rdi, {{[-0-9]+}}(%r{{[sb]}}p) # 8-byte Spill
++; CHECK-O0-NEXT:    movq %rdi, (%rsp) # 8-byte Spill
+ ; CHECK-O0-NEXT:    movl $32, %edi
+ ; CHECK-O0-NEXT:    leaq {{[0-9]+}}(%rsp), %rdx
+ ; CHECK-O0-NEXT:    xorl %ecx, %ecx
+ ; CHECK-O0-NEXT:    callq __atomic_load@PLT
+-; CHECK-O0-NEXT:    movq {{[-0-9]+}}(%r{{[sb]}}p), %rdi # 8-byte Reload
++; CHECK-O0-NEXT:    movq (%rsp), %rdi # 8-byte Reload
+ ; CHECK-O0-NEXT:    movq {{[-0-9]+}}(%r{{[sb]}}p), %rax # 8-byte Reload
+ ; CHECK-O0-NEXT:    movq {{[0-9]+}}(%rsp), %rcx
+ ; CHECK-O0-NEXT:    movq {{[0-9]+}}(%rsp), %rdx
+@@ -373,12 +373,12 @@
+ ; CHECK-O0-NEXT:    .cfi_def_cfa_offset 48
+ ; CHECK-O0-NEXT:    movq %rsi, %rax
+ ; CHECK-O0-NEXT:    movq %rdi, %rsi
+-; CHECK-O0-NEXT:    movq %rax, {{[0-9]+}}(%rsp)
++; CHECK-O0-NEXT:    movq %rax, (%rsp)
+ ; CHECK-O0-NEXT:    movq %rdx, {{[0-9]+}}(%rsp)
+ ; CHECK-O0-NEXT:    movq %rcx, {{[0-9]+}}(%rsp)
+ ; CHECK-O0-NEXT:    movq %r8, {{[0-9]+}}(%rsp)
+ ; CHECK-O0-NEXT:    movl $32, %edi
+-; CHECK-O0-NEXT:    leaq {{[0-9]+}}(%rsp), %rdx
++; CHECK-O0-NEXT:    movq %rsp, %rdx
+ ; CHECK-O0-NEXT:    xorl %ecx, %ecx
+ ; CHECK-O0-NEXT:    callq __atomic_store@PLT
+ ; CHECK-O0-NEXT:    addq $40, %rsp
+@@ -393,8 +393,8 @@
+ ; CHECK-O3-NEXT:    movq %r8, {{[0-9]+}}(%rsp)
+ ; CHECK-O3-NEXT:    movq %rcx, {{[0-9]+}}(%rsp)
+ ; CHECK-O3-NEXT:    movq %rdx, {{[0-9]+}}(%rsp)
+-; CHECK-O3-NEXT:    movq %rsi, {{[0-9]+}}(%rsp)
+-; CHECK-O3-NEXT:    leaq {{[0-9]+}}(%rsp), %rdx
++; CHECK-O3-NEXT:    movq %rsi, (%rsp)
++; CHECK-O3-NEXT:    movq %rsp, %rdx
+ ; CHECK-O3-NEXT:    movl $32, %edi
+ ; CHECK-O3-NEXT:    movq %rax, %rsi
+ ; CHECK-O3-NEXT:    xorl %ecx, %ecx
+diff --git a/llvm/test/CodeGen/X86/atomic-xor.ll b/llvm/test/CodeGen/X86/atomic-xor.ll
+--- a/llvm/test/CodeGen/X86/atomic-xor.ll
++++ b/llvm/test/CodeGen/X86/atomic-xor.ll
+@@ -24,7 +24,7 @@
+ ; X86-NEXT:    movl %esp, %ebp
+ ; X86-NEXT:    pushl %edi
+ ; X86-NEXT:    pushl %esi
+-; X86-NEXT:    andl $-8, %esp
++; X86-NEXT:    andl $-16, %esp
+ ; X86-NEXT:    subl $16, %esp
+ ; X86-NEXT:    movl 8(%ebp), %esi
+ ; X86-NEXT:    movl %esp, %eax
+diff --git a/llvm/test/CodeGen/X86/atomic128.ll b/llvm/test/CodeGen/X86/atomic128.ll
+--- a/llvm/test/CodeGen/X86/atomic128.ll
++++ b/llvm/test/CodeGen/X86/atomic128.ll
+@@ -169,7 +169,7 @@
+ ; CHECK32-NEXT:    .cfi_adjust_cfa_offset -4
+ ; CHECK32-NEXT:    addl $28, %esp
+ ; CHECK32-NEXT:    .cfi_adjust_cfa_offset -28
+-; CHECK32-NEXT:    movl {{[0-9]+}}(%esp), %eax
++; CHECK32-NEXT:    movl (%esp), %eax
+ ; CHECK32-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+ ; CHECK32-NEXT:    movl {{[0-9]+}}(%esp), %edx
+ ; CHECK32-NEXT:    movl {{[0-9]+}}(%esp), %esi
+@@ -237,7 +237,7 @@
+ ; CHECK32-NEXT:    .cfi_adjust_cfa_offset -4
+ ; CHECK32-NEXT:    addl $28, %esp
+ ; CHECK32-NEXT:    .cfi_adjust_cfa_offset -28
+-; CHECK32-NEXT:    movl {{[0-9]+}}(%esp), %eax
++; CHECK32-NEXT:    movl (%esp), %eax
+ ; CHECK32-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+ ; CHECK32-NEXT:    movl {{[0-9]+}}(%esp), %edx
+ ; CHECK32-NEXT:    movl {{[0-9]+}}(%esp), %esi
+@@ -305,7 +305,7 @@
+ ; CHECK32-NEXT:    .cfi_adjust_cfa_offset -4
+ ; CHECK32-NEXT:    addl $28, %esp
+ ; CHECK32-NEXT:    .cfi_adjust_cfa_offset -28
+-; CHECK32-NEXT:    movl {{[0-9]+}}(%esp), %eax
++; CHECK32-NEXT:    movl (%esp), %eax
+ ; CHECK32-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+ ; CHECK32-NEXT:    movl {{[0-9]+}}(%esp), %edx
+ ; CHECK32-NEXT:    movl {{[0-9]+}}(%esp), %esi
+@@ -373,7 +373,7 @@
+ ; CHECK32-NEXT:    .cfi_adjust_cfa_offset -4
+ ; CHECK32-NEXT:    addl $28, %esp
+ ; CHECK32-NEXT:    .cfi_adjust_cfa_offset -28
+-; CHECK32-NEXT:    movl {{[0-9]+}}(%esp), %eax
++; CHECK32-NEXT:    movl (%esp), %eax
+ ; CHECK32-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+ ; CHECK32-NEXT:    movl {{[0-9]+}}(%esp), %edx
+ ; CHECK32-NEXT:    movl {{[0-9]+}}(%esp), %esi
+@@ -444,7 +444,7 @@
+ ; CHECK32-NEXT:    .cfi_adjust_cfa_offset -4
+ ; CHECK32-NEXT:    addl $28, %esp
+ ; CHECK32-NEXT:    .cfi_adjust_cfa_offset -28
+-; CHECK32-NEXT:    movl {{[0-9]+}}(%esp), %eax
++; CHECK32-NEXT:    movl (%esp), %eax
+ ; CHECK32-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+ ; CHECK32-NEXT:    movl {{[0-9]+}}(%esp), %edx
+ ; CHECK32-NEXT:    movl {{[0-9]+}}(%esp), %esi
+@@ -515,7 +515,7 @@
+ ; CHECK32-NEXT:    .cfi_adjust_cfa_offset -4
+ ; CHECK32-NEXT:    addl $28, %esp
+ ; CHECK32-NEXT:    .cfi_adjust_cfa_offset -28
+-; CHECK32-NEXT:    movl {{[0-9]+}}(%esp), %eax
++; CHECK32-NEXT:    movl (%esp), %eax
+ ; CHECK32-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+ ; CHECK32-NEXT:    movl {{[0-9]+}}(%esp), %edx
+ ; CHECK32-NEXT:    movl {{[0-9]+}}(%esp), %esi
+@@ -586,7 +586,7 @@
+ ; CHECK32-NEXT:    .cfi_adjust_cfa_offset -4
+ ; CHECK32-NEXT:    addl $28, %esp
+ ; CHECK32-NEXT:    .cfi_adjust_cfa_offset -28
+-; CHECK32-NEXT:    movl {{[0-9]+}}(%esp), %eax
++; CHECK32-NEXT:    movl (%esp), %eax
+ ; CHECK32-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+ ; CHECK32-NEXT:    movl {{[0-9]+}}(%esp), %edx
+ ; CHECK32-NEXT:    movl {{[0-9]+}}(%esp), %esi
+@@ -657,7 +657,7 @@
+ ; CHECK32-NEXT:    .cfi_adjust_cfa_offset -4
+ ; CHECK32-NEXT:    addl $28, %esp
+ ; CHECK32-NEXT:    .cfi_adjust_cfa_offset -28
+-; CHECK32-NEXT:    movl {{[0-9]+}}(%esp), %eax
++; CHECK32-NEXT:    movl (%esp), %eax
+ ; CHECK32-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+ ; CHECK32-NEXT:    movl {{[0-9]+}}(%esp), %edx
+ ; CHECK32-NEXT:    movl {{[0-9]+}}(%esp), %esi
+diff --git a/llvm/test/CodeGen/X86/avx512fp16-cvt.ll b/llvm/test/CodeGen/X86/avx512fp16-cvt.ll
+--- a/llvm/test/CodeGen/X86/avx512fp16-cvt.ll
++++ b/llvm/test/CodeGen/X86/avx512fp16-cvt.ll
+@@ -804,8 +804,8 @@
+ ; X86-NEXT:    movl %esp, %ebp
+ ; X86-NEXT:    .cfi_def_cfa_register %ebp
+ ; X86-NEXT:    pushl %esi
+-; X86-NEXT:    andl $-8, %esp
+-; X86-NEXT:    subl $32, %esp
++; X86-NEXT:    andl $-16, %esp
++; X86-NEXT:    subl $48, %esp
+ ; X86-NEXT:    .cfi_offset %esi, -12
+ ; X86-NEXT:    movl 8(%ebp), %esi
+ ; X86-NEXT:    vmovsh 12(%ebp), %xmm0
+@@ -814,8 +814,8 @@
+ ; X86-NEXT:    movl %eax, (%esp)
+ ; X86-NEXT:    calll __fixhfti
+ ; X86-NEXT:    subl $4, %esp
+-; X86-NEXT:    vmovups {{[0-9]+}}(%esp), %xmm0
+-; X86-NEXT:    vmovups %xmm0, (%esi)
++; X86-NEXT:    vmovaps {{[0-9]+}}(%esp), %xmm0
++; X86-NEXT:    vmovaps %xmm0, (%esi)
+ ; X86-NEXT:    movl %esi, %eax
+ ; X86-NEXT:    leal -4(%ebp), %esp
+ ; X86-NEXT:    popl %esi
+@@ -907,8 +907,8 @@
+ ; X86-NEXT:    movl %esp, %ebp
+ ; X86-NEXT:    .cfi_def_cfa_register %ebp
+ ; X86-NEXT:    pushl %esi
+-; X86-NEXT:    andl $-8, %esp
+-; X86-NEXT:    subl $32, %esp
++; X86-NEXT:    andl $-16, %esp
++; X86-NEXT:    subl $48, %esp
+ ; X86-NEXT:    .cfi_offset %esi, -12
+ ; X86-NEXT:    movl 8(%ebp), %esi
+ ; X86-NEXT:    vmovsh 12(%ebp), %xmm0
+@@ -917,8 +917,8 @@
+ ; X86-NEXT:    movl %eax, (%esp)
+ ; X86-NEXT:    calll __fixunshfti
+ ; X86-NEXT:    subl $4, %esp
+-; X86-NEXT:    vmovups {{[0-9]+}}(%esp), %xmm0
+-; X86-NEXT:    vmovups %xmm0, (%esi)
++; X86-NEXT:    vmovaps {{[0-9]+}}(%esp), %xmm0
++; X86-NEXT:    vmovaps %xmm0, (%esi)
+ ; X86-NEXT:    movl %esi, %eax
+ ; X86-NEXT:    leal -4(%ebp), %esp
+ ; X86-NEXT:    popl %esi
+@@ -987,8 +987,8 @@
+ ; X86-NEXT:    pushl %ebp
+ ; X86-NEXT:    movl %esp, %ebp
+ ; X86-NEXT:    pushl %esi
+-; X86-NEXT:    andl $-8, %esp
+-; X86-NEXT:    subl $32, %esp
++; X86-NEXT:    andl $-16, %esp
++; X86-NEXT:    subl $48, %esp
+ ; X86-NEXT:    movl 8(%ebp), %esi
+ ; X86-NEXT:    vmovsh 12(%ebp), %xmm0
+ ; X86-NEXT:    vcvtsh2ss %xmm0, %xmm0, %xmm0
+@@ -997,7 +997,7 @@
+ ; X86-NEXT:    movl %eax, (%esp)
+ ; X86-NEXT:    calll __extendsftf2
+ ; X86-NEXT:    subl $4, %esp
+-; X86-NEXT:    vmovups {{[0-9]+}}(%esp), %xmm0
++; X86-NEXT:    vmovaps {{[0-9]+}}(%esp), %xmm0
+ ; X86-NEXT:    vmovaps %xmm0, (%esi)
+ ; X86-NEXT:    movl %esi, %eax
+ ; X86-NEXT:    leal -4(%ebp), %esp
+diff --git a/llvm/test/CodeGen/X86/bitcast-i256.ll b/llvm/test/CodeGen/X86/bitcast-i256.ll
+--- a/llvm/test/CodeGen/X86/bitcast-i256.ll
++++ b/llvm/test/CodeGen/X86/bitcast-i256.ll
+@@ -14,7 +14,7 @@
+ ; SLOW:       # %bb.0:
+ ; SLOW-NEXT:    movq %rdi, %rax
+ ; SLOW-NEXT:    vextractf128 $1, %ymm0, 16(%rdi)
+-; SLOW-NEXT:    vmovups %xmm0, (%rdi)
++; SLOW-NEXT:    vmovaps %xmm0, (%rdi)
+ ; SLOW-NEXT:    vzeroupper
+ ; SLOW-NEXT:    retq
+   %r = bitcast <8 x i32> %a to i256
+diff --git a/llvm/test/CodeGen/X86/catchpad-dynamic-alloca.ll b/llvm/test/CodeGen/X86/catchpad-dynamic-alloca.ll
+--- a/llvm/test/CodeGen/X86/catchpad-dynamic-alloca.ll
++++ b/llvm/test/CodeGen/X86/catchpad-dynamic-alloca.ll
+@@ -62,4 +62,4 @@
+ ; CHECK-LABEL: $handlerMap$0$test2:
+ ; CHECK:      .long   0
+ ; CHECK-NEXT: .long   0
+-; CHECK-NEXT: .long   8
++; CHECK-NEXT: .long   16
+diff --git a/llvm/test/CodeGen/X86/fp-intrinsics.ll b/llvm/test/CodeGen/X86/fp-intrinsics.ll
+--- a/llvm/test/CodeGen/X86/fp-intrinsics.ll
++++ b/llvm/test/CodeGen/X86/fp-intrinsics.ll
+@@ -1145,9 +1145,8 @@
+ ;
+ ; X86-SSE-LABEL: f20s128:
+ ; X86-SSE:       # %bb.0: # %entry
+-; X86-SSE-NEXT:    pushl %edi
+ ; X86-SSE-NEXT:    pushl %esi
+-; X86-SSE-NEXT:    subl $36, %esp
++; X86-SSE-NEXT:    subl $40, %esp
+ ; X86-SSE-NEXT:    movl {{[0-9]+}}(%esp), %esi
+ ; X86-SSE-NEXT:    movsd {{.*#+}} xmm0 = mem[0],zero
+ ; X86-SSE-NEXT:    movsd %xmm0, {{[0-9]+}}(%esp)
+@@ -1155,18 +1154,11 @@
+ ; X86-SSE-NEXT:    movl %eax, (%esp)
+ ; X86-SSE-NEXT:    calll __fixdfti
+ ; X86-SSE-NEXT:    subl $4, %esp
+-; X86-SSE-NEXT:    movl {{[0-9]+}}(%esp), %eax
+-; X86-SSE-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X86-SSE-NEXT:    movl {{[0-9]+}}(%esp), %edx
+-; X86-SSE-NEXT:    movl {{[0-9]+}}(%esp), %edi
+-; X86-SSE-NEXT:    movl %edi, 8(%esi)
+-; X86-SSE-NEXT:    movl %edx, 12(%esi)
+-; X86-SSE-NEXT:    movl %eax, (%esi)
+-; X86-SSE-NEXT:    movl %ecx, 4(%esi)
++; X86-SSE-NEXT:    movaps {{[0-9]+}}(%esp), %xmm0
++; X86-SSE-NEXT:    movaps %xmm0, (%esi)
+ ; X86-SSE-NEXT:    movl %esi, %eax
+-; X86-SSE-NEXT:    addl $36, %esp
++; X86-SSE-NEXT:    addl $40, %esp
+ ; X86-SSE-NEXT:    popl %esi
+-; X86-SSE-NEXT:    popl %edi
+ ; X86-SSE-NEXT:    retl $4
+ ;
+ ; SSE-LABEL: f20s128:
+@@ -1490,9 +1482,8 @@
+ ;
+ ; X86-SSE-LABEL: f20u128:
+ ; X86-SSE:       # %bb.0: # %entry
+-; X86-SSE-NEXT:    pushl %edi
+ ; X86-SSE-NEXT:    pushl %esi
+-; X86-SSE-NEXT:    subl $36, %esp
++; X86-SSE-NEXT:    subl $40, %esp
+ ; X86-SSE-NEXT:    movl {{[0-9]+}}(%esp), %esi
+ ; X86-SSE-NEXT:    movsd {{.*#+}} xmm0 = mem[0],zero
+ ; X86-SSE-NEXT:    movsd %xmm0, {{[0-9]+}}(%esp)
+@@ -1500,18 +1491,11 @@
+ ; X86-SSE-NEXT:    movl %eax, (%esp)
+ ; X86-SSE-NEXT:    calll __fixunsdfti
+ ; X86-SSE-NEXT:    subl $4, %esp
+-; X86-SSE-NEXT:    movl {{[0-9]+}}(%esp), %eax
+-; X86-SSE-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X86-SSE-NEXT:    movl {{[0-9]+}}(%esp), %edx
+-; X86-SSE-NEXT:    movl {{[0-9]+}}(%esp), %edi
+-; X86-SSE-NEXT:    movl %edi, 8(%esi)
+-; X86-SSE-NEXT:    movl %edx, 12(%esi)
+-; X86-SSE-NEXT:    movl %eax, (%esi)
+-; X86-SSE-NEXT:    movl %ecx, 4(%esi)
++; X86-SSE-NEXT:    movaps {{[0-9]+}}(%esp), %xmm0
++; X86-SSE-NEXT:    movaps %xmm0, (%esi)
+ ; X86-SSE-NEXT:    movl %esi, %eax
+-; X86-SSE-NEXT:    addl $36, %esp
++; X86-SSE-NEXT:    addl $40, %esp
+ ; X86-SSE-NEXT:    popl %esi
+-; X86-SSE-NEXT:    popl %edi
+ ; X86-SSE-NEXT:    retl $4
+ ;
+ ; SSE-LABEL: f20u128:
+diff --git a/llvm/test/CodeGen/X86/fp128-cast-strict.ll b/llvm/test/CodeGen/X86/fp128-cast-strict.ll
+--- a/llvm/test/CodeGen/X86/fp128-cast-strict.ll
++++ b/llvm/test/CodeGen/X86/fp128-cast-strict.ll
+@@ -37,7 +37,7 @@
+ ; X86-LABEL: TestFPExtF16_F128:
+ ; X86:       # %bb.0: # %entry
+ ; X86-NEXT:    pushl %esi
+-; X86-NEXT:    subl $24, %esp
++; X86-NEXT:    subl $40, %esp
+ ; X86-NEXT:    movzwl vf16, %eax
+ ; X86-NEXT:    movl %eax, (%esp)
+ ; X86-NEXT:    calll __gnu_h2f_ieee
+@@ -55,7 +55,7 @@
+ ; X86-NEXT:    movl %edx, vf128+8
+ ; X86-NEXT:    movl %ecx, vf128+4
+ ; X86-NEXT:    movl %eax, vf128
+-; X86-NEXT:    addl $24, %esp
++; X86-NEXT:    addl $40, %esp
+ ; X86-NEXT:    popl %esi
+ ; X86-NEXT:    retl
+ entry:
+@@ -87,7 +87,7 @@
+ ; X86-LABEL: TestFPExtF32_F128:
+ ; X86:       # %bb.0: # %entry
+ ; X86-NEXT:    pushl %esi
+-; X86-NEXT:    subl $24, %esp
++; X86-NEXT:    subl $40, %esp
+ ; X86-NEXT:    flds vf32
+ ; X86-NEXT:    fstps {{[0-9]+}}(%esp)
+ ; X86-NEXT:    wait
+@@ -103,7 +103,7 @@
+ ; X86-NEXT:    movl %edx, vf128+8
+ ; X86-NEXT:    movl %ecx, vf128+4
+ ; X86-NEXT:    movl %eax, vf128
+-; X86-NEXT:    addl $24, %esp
++; X86-NEXT:    addl $40, %esp
+ ; X86-NEXT:    popl %esi
+ ; X86-NEXT:    retl
+ entry:
+diff --git a/llvm/test/CodeGen/X86/fp128-cast.ll b/llvm/test/CodeGen/X86/fp128-cast.ll
+--- a/llvm/test/CodeGen/X86/fp128-cast.ll
++++ b/llvm/test/CodeGen/X86/fp128-cast.ll
+@@ -34,7 +34,7 @@
+ ; X32-LABEL: TestFPExtF32_F128:
+ ; X32:       # %bb.0: # %entry
+ ; X32-NEXT:    pushl %esi
+-; X32-NEXT:    subl $24, %esp
++; X32-NEXT:    subl $40, %esp
+ ; X32-NEXT:    flds vf32
+ ; X32-NEXT:    fstps {{[0-9]+}}(%esp)
+ ; X32-NEXT:    leal {{[0-9]+}}(%esp), %eax
+@@ -49,7 +49,7 @@
+ ; X32-NEXT:    movl %edx, vf128+8
+ ; X32-NEXT:    movl %ecx, vf128+4
+ ; X32-NEXT:    movl %eax, vf128
+-; X32-NEXT:    addl $24, %esp
++; X32-NEXT:    addl $40, %esp
+ ; X32-NEXT:    popl %esi
+ ; X32-NEXT:    retl
+ ;
+@@ -424,7 +424,7 @@
+ ; X32-NEXT:    pushl %eax
+ ; X32-NEXT:    calll __fixtfti
+ ; X32-NEXT:    addl $28, %esp
+-; X32-NEXT:    movl {{[0-9]+}}(%esp), %eax
++; X32-NEXT:    movl (%esp), %eax
+ ; X32-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+ ; X32-NEXT:    movl {{[0-9]+}}(%esp), %edx
+ ; X32-NEXT:    movl {{[0-9]+}}(%esp), %esi
+@@ -475,7 +475,7 @@
+ ; X32-NEXT:    pushl %eax
+ ; X32-NEXT:    calll __fixunstfti
+ ; X32-NEXT:    addl $28, %esp
+-; X32-NEXT:    movl {{[0-9]+}}(%esp), %eax
++; X32-NEXT:    movl (%esp), %eax
+ ; X32-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+ ; X32-NEXT:    movl {{[0-9]+}}(%esp), %edx
+ ; X32-NEXT:    movl {{[0-9]+}}(%esp), %esi
+@@ -638,7 +638,7 @@
+ ; X32-NEXT:    pushl %ecx
+ ; X32-NEXT:    calll __floatsitf
+ ; X32-NEXT:    addl $12, %esp
+-; X32-NEXT:    movl {{[0-9]+}}(%esp), %eax
++; X32-NEXT:    movl (%esp), %eax
+ ; X32-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+ ; X32-NEXT:    movl {{[0-9]+}}(%esp), %edx
+ ; X32-NEXT:    movl {{[0-9]+}}(%esp), %esi
+@@ -686,7 +686,7 @@
+ ; X32-NEXT:    pushl %ecx
+ ; X32-NEXT:    calll __floatunsitf
+ ; X32-NEXT:    addl $12, %esp
+-; X32-NEXT:    movl {{[0-9]+}}(%esp), %eax
++; X32-NEXT:    movl (%esp), %eax
+ ; X32-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+ ; X32-NEXT:    movl {{[0-9]+}}(%esp), %edx
+ ; X32-NEXT:    movl {{[0-9]+}}(%esp), %esi
+@@ -732,7 +732,7 @@
+ ; X32-NEXT:    pushl %eax
+ ; X32-NEXT:    calll __floatsitf
+ ; X32-NEXT:    addl $12, %esp
+-; X32-NEXT:    movl {{[0-9]+}}(%esp), %eax
++; X32-NEXT:    movl (%esp), %eax
+ ; X32-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+ ; X32-NEXT:    movl {{[0-9]+}}(%esp), %edx
+ ; X32-NEXT:    movl {{[0-9]+}}(%esp), %esi
+@@ -778,7 +778,7 @@
+ ; X32-NEXT:    pushl %eax
+ ; X32-NEXT:    calll __floatunsitf
+ ; X32-NEXT:    addl $12, %esp
+-; X32-NEXT:    movl {{[0-9]+}}(%esp), %eax
++; X32-NEXT:    movl (%esp), %eax
+ ; X32-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+ ; X32-NEXT:    movl {{[0-9]+}}(%esp), %edx
+ ; X32-NEXT:    movl {{[0-9]+}}(%esp), %esi
+@@ -825,7 +825,7 @@
+ ; X32-NEXT:    pushl %eax
+ ; X32-NEXT:    calll __floatditf
+ ; X32-NEXT:    addl $12, %esp
+-; X32-NEXT:    movl {{[0-9]+}}(%esp), %eax
++; X32-NEXT:    movl (%esp), %eax
+ ; X32-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+ ; X32-NEXT:    movl {{[0-9]+}}(%esp), %edx
+ ; X32-NEXT:    movl {{[0-9]+}}(%esp), %esi
+@@ -872,7 +872,7 @@
+ ; X32-NEXT:    pushl %eax
+ ; X32-NEXT:    calll __floatunditf
+ ; X32-NEXT:    addl $12, %esp
+-; X32-NEXT:    movl {{[0-9]+}}(%esp), %eax
++; X32-NEXT:    movl (%esp), %eax
+ ; X32-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+ ; X32-NEXT:    movl {{[0-9]+}}(%esp), %edx
+ ; X32-NEXT:    movl {{[0-9]+}}(%esp), %esi
+@@ -922,7 +922,7 @@
+ ; X32-NEXT:    pushl %eax
+ ; X32-NEXT:    calll __floattitf
+ ; X32-NEXT:    addl $28, %esp
+-; X32-NEXT:    movl {{[0-9]+}}(%esp), %eax
++; X32-NEXT:    movl (%esp), %eax
+ ; X32-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+ ; X32-NEXT:    movl {{[0-9]+}}(%esp), %edx
+ ; X32-NEXT:    movl {{[0-9]+}}(%esp), %esi
+@@ -973,7 +973,7 @@
+ ; X32-NEXT:    pushl %eax
+ ; X32-NEXT:    calll __floatuntitf
+ ; X32-NEXT:    addl $28, %esp
+-; X32-NEXT:    movl {{[0-9]+}}(%esp), %eax
++; X32-NEXT:    movl (%esp), %eax
+ ; X32-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+ ; X32-NEXT:    movl {{[0-9]+}}(%esp), %edx
+ ; X32-NEXT:    movl {{[0-9]+}}(%esp), %esi
+@@ -1303,7 +1303,7 @@
+ ; X32-NEXT:    addl $12, %esp
+ ; X32-NEXT:    movl {{[0-9]+}}(%esp), %eax
+ ; X32-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X32-NEXT:    movl {{[0-9]+}}(%esp), %edx
++; X32-NEXT:    movl (%esp), %edx
+ ; X32-NEXT:    movl {{[0-9]+}}(%esp), %edi
+ ; X32-NEXT:  .LBB26_4: # %cleanup
+ ; X32-NEXT:    movl %edx, (%esi)
+diff --git a/llvm/test/CodeGen/X86/fp128-libcalls-strict.ll b/llvm/test/CodeGen/X86/fp128-libcalls-strict.ll
+--- a/llvm/test/CodeGen/X86/fp128-libcalls-strict.ll
++++ b/llvm/test/CodeGen/X86/fp128-libcalls-strict.ll
+@@ -21,9 +21,8 @@
+ ;
+ ; X86-LABEL: add:
+ ; X86:       # %bb.0: # %entry
+-; X86-NEXT:    pushl %edi
+ ; X86-NEXT:    pushl %esi
+-; X86-NEXT:    subl $20, %esp
++; X86-NEXT:    subl $24, %esp
+ ; X86-NEXT:    movl {{[0-9]+}}(%esp), %esi
+ ; X86-NEXT:    subl $12, %esp
+ ; X86-NEXT:    leal {{[0-9]+}}(%esp), %eax
+@@ -38,18 +37,11 @@
+ ; X86-NEXT:    pushl %eax
+ ; X86-NEXT:    calll __addtf3
+ ; X86-NEXT:    addl $44, %esp
+-; X86-NEXT:    movl (%esp), %eax
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edi
+-; X86-NEXT:    movl %edi, 8(%esi)
+-; X86-NEXT:    movl %edx, 12(%esi)
+-; X86-NEXT:    movl %eax, (%esi)
+-; X86-NEXT:    movl %ecx, 4(%esi)
++; X86-NEXT:    movaps (%esp), %xmm0
++; X86-NEXT:    movaps %xmm0, (%esi)
+ ; X86-NEXT:    movl %esi, %eax
+-; X86-NEXT:    addl $20, %esp
++; X86-NEXT:    addl $24, %esp
+ ; X86-NEXT:    popl %esi
+-; X86-NEXT:    popl %edi
+ ; X86-NEXT:    retl $4
+ entry:
+   %add = call fp128 @llvm.experimental.constrained.fadd.f128(fp128 %x, fp128 %y,  metadata !"round.dynamic", metadata !"fpexcept.strict") #0
+@@ -66,9 +58,8 @@
+ ;
+ ; X86-LABEL: sub:
+ ; X86:       # %bb.0: # %entry
+-; X86-NEXT:    pushl %edi
+ ; X86-NEXT:    pushl %esi
+-; X86-NEXT:    subl $20, %esp
++; X86-NEXT:    subl $24, %esp
+ ; X86-NEXT:    movl {{[0-9]+}}(%esp), %esi
+ ; X86-NEXT:    subl $12, %esp
+ ; X86-NEXT:    leal {{[0-9]+}}(%esp), %eax
+@@ -83,18 +74,11 @@
+ ; X86-NEXT:    pushl %eax
+ ; X86-NEXT:    calll __subtf3
+ ; X86-NEXT:    addl $44, %esp
+-; X86-NEXT:    movl (%esp), %eax
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edi
+-; X86-NEXT:    movl %edi, 8(%esi)
+-; X86-NEXT:    movl %edx, 12(%esi)
+-; X86-NEXT:    movl %eax, (%esi)
+-; X86-NEXT:    movl %ecx, 4(%esi)
++; X86-NEXT:    movaps (%esp), %xmm0
++; X86-NEXT:    movaps %xmm0, (%esi)
+ ; X86-NEXT:    movl %esi, %eax
+-; X86-NEXT:    addl $20, %esp
++; X86-NEXT:    addl $24, %esp
+ ; X86-NEXT:    popl %esi
+-; X86-NEXT:    popl %edi
+ ; X86-NEXT:    retl $4
+ entry:
+   %sub = call fp128 @llvm.experimental.constrained.fsub.f128(fp128 %x, fp128 %y,  metadata !"round.dynamic", metadata !"fpexcept.strict") #0
+@@ -111,9 +95,8 @@
+ ;
+ ; X86-LABEL: mul:
+ ; X86:       # %bb.0: # %entry
+-; X86-NEXT:    pushl %edi
+ ; X86-NEXT:    pushl %esi
+-; X86-NEXT:    subl $20, %esp
++; X86-NEXT:    subl $24, %esp
+ ; X86-NEXT:    movl {{[0-9]+}}(%esp), %esi
+ ; X86-NEXT:    subl $12, %esp
+ ; X86-NEXT:    leal {{[0-9]+}}(%esp), %eax
+@@ -128,18 +111,11 @@
+ ; X86-NEXT:    pushl %eax
+ ; X86-NEXT:    calll __multf3
+ ; X86-NEXT:    addl $44, %esp
+-; X86-NEXT:    movl (%esp), %eax
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edi
+-; X86-NEXT:    movl %edi, 8(%esi)
+-; X86-NEXT:    movl %edx, 12(%esi)
+-; X86-NEXT:    movl %eax, (%esi)
+-; X86-NEXT:    movl %ecx, 4(%esi)
++; X86-NEXT:    movaps (%esp), %xmm0
++; X86-NEXT:    movaps %xmm0, (%esi)
+ ; X86-NEXT:    movl %esi, %eax
+-; X86-NEXT:    addl $20, %esp
++; X86-NEXT:    addl $24, %esp
+ ; X86-NEXT:    popl %esi
+-; X86-NEXT:    popl %edi
+ ; X86-NEXT:    retl $4
+ entry:
+   %mul = call fp128 @llvm.experimental.constrained.fmul.f128(fp128 %x, fp128 %y,  metadata !"round.dynamic", metadata !"fpexcept.strict") #0
+@@ -156,9 +132,8 @@
+ ;
+ ; X86-LABEL: div:
+ ; X86:       # %bb.0: # %entry
+-; X86-NEXT:    pushl %edi
+ ; X86-NEXT:    pushl %esi
+-; X86-NEXT:    subl $20, %esp
++; X86-NEXT:    subl $24, %esp
+ ; X86-NEXT:    movl {{[0-9]+}}(%esp), %esi
+ ; X86-NEXT:    subl $12, %esp
+ ; X86-NEXT:    leal {{[0-9]+}}(%esp), %eax
+@@ -173,18 +148,11 @@
+ ; X86-NEXT:    pushl %eax
+ ; X86-NEXT:    calll __divtf3
+ ; X86-NEXT:    addl $44, %esp
+-; X86-NEXT:    movl (%esp), %eax
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edi
+-; X86-NEXT:    movl %edi, 8(%esi)
+-; X86-NEXT:    movl %edx, 12(%esi)
+-; X86-NEXT:    movl %eax, (%esi)
+-; X86-NEXT:    movl %ecx, 4(%esi)
++; X86-NEXT:    movaps (%esp), %xmm0
++; X86-NEXT:    movaps %xmm0, (%esi)
+ ; X86-NEXT:    movl %esi, %eax
+-; X86-NEXT:    addl $20, %esp
++; X86-NEXT:    addl $24, %esp
+ ; X86-NEXT:    popl %esi
+-; X86-NEXT:    popl %edi
+ ; X86-NEXT:    retl $4
+ entry:
+   %div = call fp128 @llvm.experimental.constrained.fdiv.f128(fp128 %x, fp128 %y,  metadata !"round.dynamic", metadata !"fpexcept.strict") #0
+@@ -201,9 +169,8 @@
+ ;
+ ; X86-LABEL: fma:
+ ; X86:       # %bb.0: # %entry
+-; X86-NEXT:    pushl %edi
+ ; X86-NEXT:    pushl %esi
+-; X86-NEXT:    subl $20, %esp
++; X86-NEXT:    subl $24, %esp
+ ; X86-NEXT:    movl {{[0-9]+}}(%esp), %esi
+ ; X86-NEXT:    subl $12, %esp
+ ; X86-NEXT:    leal {{[0-9]+}}(%esp), %eax
+@@ -222,18 +189,11 @@
+ ; X86-NEXT:    pushl %eax
+ ; X86-NEXT:    calll fmal
+ ; X86-NEXT:    addl $60, %esp
+-; X86-NEXT:    movl (%esp), %eax
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edi
+-; X86-NEXT:    movl %edi, 8(%esi)
+-; X86-NEXT:    movl %edx, 12(%esi)
+-; X86-NEXT:    movl %eax, (%esi)
+-; X86-NEXT:    movl %ecx, 4(%esi)
++; X86-NEXT:    movaps (%esp), %xmm0
++; X86-NEXT:    movaps %xmm0, (%esi)
+ ; X86-NEXT:    movl %esi, %eax
+-; X86-NEXT:    addl $20, %esp
++; X86-NEXT:    addl $24, %esp
+ ; X86-NEXT:    popl %esi
+-; X86-NEXT:    popl %edi
+ ; X86-NEXT:    retl $4
+ entry:
+   %fma = call fp128 @llvm.experimental.constrained.fma.f128(fp128 %x, fp128 %y,  fp128 %z, metadata !"round.dynamic", metadata !"fpexcept.strict") #0
+@@ -250,9 +210,8 @@
+ ;
+ ; X86-LABEL: frem:
+ ; X86:       # %bb.0: # %entry
+-; X86-NEXT:    pushl %edi
+ ; X86-NEXT:    pushl %esi
+-; X86-NEXT:    subl $20, %esp
++; X86-NEXT:    subl $24, %esp
+ ; X86-NEXT:    movl {{[0-9]+}}(%esp), %esi
+ ; X86-NEXT:    subl $12, %esp
+ ; X86-NEXT:    leal {{[0-9]+}}(%esp), %eax
+@@ -267,18 +226,11 @@
+ ; X86-NEXT:    pushl %eax
+ ; X86-NEXT:    calll fmodl
+ ; X86-NEXT:    addl $44, %esp
+-; X86-NEXT:    movl (%esp), %eax
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edi
+-; X86-NEXT:    movl %edi, 8(%esi)
+-; X86-NEXT:    movl %edx, 12(%esi)
+-; X86-NEXT:    movl %eax, (%esi)
+-; X86-NEXT:    movl %ecx, 4(%esi)
++; X86-NEXT:    movaps (%esp), %xmm0
++; X86-NEXT:    movaps %xmm0, (%esi)
+ ; X86-NEXT:    movl %esi, %eax
+-; X86-NEXT:    addl $20, %esp
++; X86-NEXT:    addl $24, %esp
+ ; X86-NEXT:    popl %esi
+-; X86-NEXT:    popl %edi
+ ; X86-NEXT:    retl $4
+ entry:
+   %div = call fp128 @llvm.experimental.constrained.frem.f128(fp128 %x, fp128 %y,  metadata !"round.dynamic", metadata !"fpexcept.strict") #0
+@@ -295,9 +247,8 @@
+ ;
+ ; X86-LABEL: ceil:
+ ; X86:       # %bb.0: # %entry
+-; X86-NEXT:    pushl %edi
+ ; X86-NEXT:    pushl %esi
+-; X86-NEXT:    subl $20, %esp
++; X86-NEXT:    subl $24, %esp
+ ; X86-NEXT:    movl {{[0-9]+}}(%esp), %esi
+ ; X86-NEXT:    subl $12, %esp
+ ; X86-NEXT:    leal {{[0-9]+}}(%esp), %eax
+@@ -308,18 +259,11 @@
+ ; X86-NEXT:    pushl %eax
+ ; X86-NEXT:    calll ceill
+ ; X86-NEXT:    addl $28, %esp
+-; X86-NEXT:    movl (%esp), %eax
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edi
+-; X86-NEXT:    movl %edi, 8(%esi)
+-; X86-NEXT:    movl %edx, 12(%esi)
+-; X86-NEXT:    movl %eax, (%esi)
+-; X86-NEXT:    movl %ecx, 4(%esi)
++; X86-NEXT:    movaps (%esp), %xmm0
++; X86-NEXT:    movaps %xmm0, (%esi)
+ ; X86-NEXT:    movl %esi, %eax
+-; X86-NEXT:    addl $20, %esp
++; X86-NEXT:    addl $24, %esp
+ ; X86-NEXT:    popl %esi
+-; X86-NEXT:    popl %edi
+ ; X86-NEXT:    retl $4
+ entry:
+   %ceil = call fp128 @llvm.experimental.constrained.ceil.f128(fp128 %x, metadata !"fpexcept.strict") #0
+@@ -336,9 +280,8 @@
+ ;
+ ; X86-LABEL: cos:
+ ; X86:       # %bb.0: # %entry
+-; X86-NEXT:    pushl %edi
+ ; X86-NEXT:    pushl %esi
+-; X86-NEXT:    subl $20, %esp
++; X86-NEXT:    subl $24, %esp
+ ; X86-NEXT:    movl {{[0-9]+}}(%esp), %esi
+ ; X86-NEXT:    subl $12, %esp
+ ; X86-NEXT:    leal {{[0-9]+}}(%esp), %eax
+@@ -349,18 +292,11 @@
+ ; X86-NEXT:    pushl %eax
+ ; X86-NEXT:    calll cosl
+ ; X86-NEXT:    addl $28, %esp
+-; X86-NEXT:    movl (%esp), %eax
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edi
+-; X86-NEXT:    movl %edi, 8(%esi)
+-; X86-NEXT:    movl %edx, 12(%esi)
+-; X86-NEXT:    movl %eax, (%esi)
+-; X86-NEXT:    movl %ecx, 4(%esi)
++; X86-NEXT:    movaps (%esp), %xmm0
++; X86-NEXT:    movaps %xmm0, (%esi)
+ ; X86-NEXT:    movl %esi, %eax
+-; X86-NEXT:    addl $20, %esp
++; X86-NEXT:    addl $24, %esp
+ ; X86-NEXT:    popl %esi
+-; X86-NEXT:    popl %edi
+ ; X86-NEXT:    retl $4
+ entry:
+   %cos = call fp128 @llvm.experimental.constrained.cos.f128(fp128 %x, metadata !"round.dynamic", metadata !"fpexcept.strict") #0
+@@ -377,9 +313,8 @@
+ ;
+ ; X86-LABEL: exp:
+ ; X86:       # %bb.0: # %entry
+-; X86-NEXT:    pushl %edi
+ ; X86-NEXT:    pushl %esi
+-; X86-NEXT:    subl $20, %esp
++; X86-NEXT:    subl $24, %esp
+ ; X86-NEXT:    movl {{[0-9]+}}(%esp), %esi
+ ; X86-NEXT:    subl $12, %esp
+ ; X86-NEXT:    leal {{[0-9]+}}(%esp), %eax
+@@ -390,18 +325,11 @@
+ ; X86-NEXT:    pushl %eax
+ ; X86-NEXT:    calll expl
+ ; X86-NEXT:    addl $28, %esp
+-; X86-NEXT:    movl (%esp), %eax
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edi
+-; X86-NEXT:    movl %edi, 8(%esi)
+-; X86-NEXT:    movl %edx, 12(%esi)
+-; X86-NEXT:    movl %eax, (%esi)
+-; X86-NEXT:    movl %ecx, 4(%esi)
++; X86-NEXT:    movaps (%esp), %xmm0
++; X86-NEXT:    movaps %xmm0, (%esi)
+ ; X86-NEXT:    movl %esi, %eax
+-; X86-NEXT:    addl $20, %esp
++; X86-NEXT:    addl $24, %esp
+ ; X86-NEXT:    popl %esi
+-; X86-NEXT:    popl %edi
+ ; X86-NEXT:    retl $4
+ entry:
+   %exp = call fp128 @llvm.experimental.constrained.exp.f128(fp128 %x, metadata !"round.dynamic", metadata !"fpexcept.strict") #0
+@@ -418,9 +346,8 @@
+ ;
+ ; X86-LABEL: exp2:
+ ; X86:       # %bb.0: # %entry
+-; X86-NEXT:    pushl %edi
+ ; X86-NEXT:    pushl %esi
+-; X86-NEXT:    subl $20, %esp
++; X86-NEXT:    subl $24, %esp
+ ; X86-NEXT:    movl {{[0-9]+}}(%esp), %esi
+ ; X86-NEXT:    subl $12, %esp
+ ; X86-NEXT:    leal {{[0-9]+}}(%esp), %eax
+@@ -431,18 +358,11 @@
+ ; X86-NEXT:    pushl %eax
+ ; X86-NEXT:    calll exp2l
+ ; X86-NEXT:    addl $28, %esp
+-; X86-NEXT:    movl (%esp), %eax
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edi
+-; X86-NEXT:    movl %edi, 8(%esi)
+-; X86-NEXT:    movl %edx, 12(%esi)
+-; X86-NEXT:    movl %eax, (%esi)
+-; X86-NEXT:    movl %ecx, 4(%esi)
++; X86-NEXT:    movaps (%esp), %xmm0
++; X86-NEXT:    movaps %xmm0, (%esi)
+ ; X86-NEXT:    movl %esi, %eax
+-; X86-NEXT:    addl $20, %esp
++; X86-NEXT:    addl $24, %esp
+ ; X86-NEXT:    popl %esi
+-; X86-NEXT:    popl %edi
+ ; X86-NEXT:    retl $4
+ entry:
+   %exp2 = call fp128 @llvm.experimental.constrained.exp2.f128(fp128 %x, metadata !"round.dynamic", metadata !"fpexcept.strict") #0
+@@ -459,9 +379,8 @@
+ ;
+ ; X86-LABEL: floor:
+ ; X86:       # %bb.0: # %entry
+-; X86-NEXT:    pushl %edi
+ ; X86-NEXT:    pushl %esi
+-; X86-NEXT:    subl $20, %esp
++; X86-NEXT:    subl $24, %esp
+ ; X86-NEXT:    movl {{[0-9]+}}(%esp), %esi
+ ; X86-NEXT:    subl $12, %esp
+ ; X86-NEXT:    leal {{[0-9]+}}(%esp), %eax
+@@ -472,18 +391,11 @@
+ ; X86-NEXT:    pushl %eax
+ ; X86-NEXT:    calll floorl
+ ; X86-NEXT:    addl $28, %esp
+-; X86-NEXT:    movl (%esp), %eax
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edi
+-; X86-NEXT:    movl %edi, 8(%esi)
+-; X86-NEXT:    movl %edx, 12(%esi)
+-; X86-NEXT:    movl %eax, (%esi)
+-; X86-NEXT:    movl %ecx, 4(%esi)
++; X86-NEXT:    movaps (%esp), %xmm0
++; X86-NEXT:    movaps %xmm0, (%esi)
+ ; X86-NEXT:    movl %esi, %eax
+-; X86-NEXT:    addl $20, %esp
++; X86-NEXT:    addl $24, %esp
+ ; X86-NEXT:    popl %esi
+-; X86-NEXT:    popl %edi
+ ; X86-NEXT:    retl $4
+ entry:
+   %floor = call fp128 @llvm.experimental.constrained.floor.f128(fp128 %x, metadata !"fpexcept.strict") #0
+@@ -500,9 +412,8 @@
+ ;
+ ; X86-LABEL: log:
+ ; X86:       # %bb.0: # %entry
+-; X86-NEXT:    pushl %edi
+ ; X86-NEXT:    pushl %esi
+-; X86-NEXT:    subl $20, %esp
++; X86-NEXT:    subl $24, %esp
+ ; X86-NEXT:    movl {{[0-9]+}}(%esp), %esi
+ ; X86-NEXT:    subl $12, %esp
+ ; X86-NEXT:    leal {{[0-9]+}}(%esp), %eax
+@@ -513,18 +424,11 @@
+ ; X86-NEXT:    pushl %eax
+ ; X86-NEXT:    calll logl
+ ; X86-NEXT:    addl $28, %esp
+-; X86-NEXT:    movl (%esp), %eax
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edi
+-; X86-NEXT:    movl %edi, 8(%esi)
+-; X86-NEXT:    movl %edx, 12(%esi)
+-; X86-NEXT:    movl %eax, (%esi)
+-; X86-NEXT:    movl %ecx, 4(%esi)
++; X86-NEXT:    movaps (%esp), %xmm0
++; X86-NEXT:    movaps %xmm0, (%esi)
+ ; X86-NEXT:    movl %esi, %eax
+-; X86-NEXT:    addl $20, %esp
++; X86-NEXT:    addl $24, %esp
+ ; X86-NEXT:    popl %esi
+-; X86-NEXT:    popl %edi
+ ; X86-NEXT:    retl $4
+ entry:
+   %log = call fp128 @llvm.experimental.constrained.log.f128(fp128 %x, metadata !"round.dynamic", metadata !"fpexcept.strict") #0
+@@ -541,9 +445,8 @@
+ ;
+ ; X86-LABEL: log10:
+ ; X86:       # %bb.0: # %entry
+-; X86-NEXT:    pushl %edi
+ ; X86-NEXT:    pushl %esi
+-; X86-NEXT:    subl $20, %esp
++; X86-NEXT:    subl $24, %esp
+ ; X86-NEXT:    movl {{[0-9]+}}(%esp), %esi
+ ; X86-NEXT:    subl $12, %esp
+ ; X86-NEXT:    leal {{[0-9]+}}(%esp), %eax
+@@ -554,18 +457,11 @@
+ ; X86-NEXT:    pushl %eax
+ ; X86-NEXT:    calll log10l
+ ; X86-NEXT:    addl $28, %esp
+-; X86-NEXT:    movl (%esp), %eax
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edi
+-; X86-NEXT:    movl %edi, 8(%esi)
+-; X86-NEXT:    movl %edx, 12(%esi)
+-; X86-NEXT:    movl %eax, (%esi)
+-; X86-NEXT:    movl %ecx, 4(%esi)
++; X86-NEXT:    movaps (%esp), %xmm0
++; X86-NEXT:    movaps %xmm0, (%esi)
+ ; X86-NEXT:    movl %esi, %eax
+-; X86-NEXT:    addl $20, %esp
++; X86-NEXT:    addl $24, %esp
+ ; X86-NEXT:    popl %esi
+-; X86-NEXT:    popl %edi
+ ; X86-NEXT:    retl $4
+ entry:
+   %log10 = call fp128 @llvm.experimental.constrained.log10.f128(fp128 %x, metadata !"round.dynamic", metadata !"fpexcept.strict") #0
+@@ -582,9 +478,8 @@
+ ;
+ ; X86-LABEL: log2:
+ ; X86:       # %bb.0: # %entry
+-; X86-NEXT:    pushl %edi
+ ; X86-NEXT:    pushl %esi
+-; X86-NEXT:    subl $20, %esp
++; X86-NEXT:    subl $24, %esp
+ ; X86-NEXT:    movl {{[0-9]+}}(%esp), %esi
+ ; X86-NEXT:    subl $12, %esp
+ ; X86-NEXT:    leal {{[0-9]+}}(%esp), %eax
+@@ -595,18 +490,11 @@
+ ; X86-NEXT:    pushl %eax
+ ; X86-NEXT:    calll log2l
+ ; X86-NEXT:    addl $28, %esp
+-; X86-NEXT:    movl (%esp), %eax
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edi
+-; X86-NEXT:    movl %edi, 8(%esi)
+-; X86-NEXT:    movl %edx, 12(%esi)
+-; X86-NEXT:    movl %eax, (%esi)
+-; X86-NEXT:    movl %ecx, 4(%esi)
++; X86-NEXT:    movaps (%esp), %xmm0
++; X86-NEXT:    movaps %xmm0, (%esi)
+ ; X86-NEXT:    movl %esi, %eax
+-; X86-NEXT:    addl $20, %esp
++; X86-NEXT:    addl $24, %esp
+ ; X86-NEXT:    popl %esi
+-; X86-NEXT:    popl %edi
+ ; X86-NEXT:    retl $4
+ entry:
+   %log2 = call fp128 @llvm.experimental.constrained.log2.f128(fp128 %x, metadata !"round.dynamic", metadata !"fpexcept.strict") #0
+@@ -623,9 +511,8 @@
+ ;
+ ; X86-LABEL: maxnum:
+ ; X86:       # %bb.0: # %entry
+-; X86-NEXT:    pushl %edi
+ ; X86-NEXT:    pushl %esi
+-; X86-NEXT:    subl $20, %esp
++; X86-NEXT:    subl $24, %esp
+ ; X86-NEXT:    movl {{[0-9]+}}(%esp), %esi
+ ; X86-NEXT:    subl $12, %esp
+ ; X86-NEXT:    leal {{[0-9]+}}(%esp), %eax
+@@ -640,18 +527,11 @@
+ ; X86-NEXT:    pushl %eax
+ ; X86-NEXT:    calll fmaxl
+ ; X86-NEXT:    addl $44, %esp
+-; X86-NEXT:    movl (%esp), %eax
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edi
+-; X86-NEXT:    movl %edi, 8(%esi)
+-; X86-NEXT:    movl %edx, 12(%esi)
+-; X86-NEXT:    movl %eax, (%esi)
+-; X86-NEXT:    movl %ecx, 4(%esi)
++; X86-NEXT:    movaps (%esp), %xmm0
++; X86-NEXT:    movaps %xmm0, (%esi)
+ ; X86-NEXT:    movl %esi, %eax
+-; X86-NEXT:    addl $20, %esp
++; X86-NEXT:    addl $24, %esp
+ ; X86-NEXT:    popl %esi
+-; X86-NEXT:    popl %edi
+ ; X86-NEXT:    retl $4
+ entry:
+   %maxnum = call fp128 @llvm.experimental.constrained.maxnum.f128(fp128 %x, fp128 %y, metadata !"fpexcept.strict") #0
+@@ -668,9 +548,8 @@
+ ;
+ ; X86-LABEL: minnum:
+ ; X86:       # %bb.0: # %entry
+-; X86-NEXT:    pushl %edi
+ ; X86-NEXT:    pushl %esi
+-; X86-NEXT:    subl $20, %esp
++; X86-NEXT:    subl $24, %esp
+ ; X86-NEXT:    movl {{[0-9]+}}(%esp), %esi
+ ; X86-NEXT:    subl $12, %esp
+ ; X86-NEXT:    leal {{[0-9]+}}(%esp), %eax
+@@ -685,18 +564,11 @@
+ ; X86-NEXT:    pushl %eax
+ ; X86-NEXT:    calll fminl
+ ; X86-NEXT:    addl $44, %esp
+-; X86-NEXT:    movl (%esp), %eax
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edi
+-; X86-NEXT:    movl %edi, 8(%esi)
+-; X86-NEXT:    movl %edx, 12(%esi)
+-; X86-NEXT:    movl %eax, (%esi)
+-; X86-NEXT:    movl %ecx, 4(%esi)
++; X86-NEXT:    movaps (%esp), %xmm0
++; X86-NEXT:    movaps %xmm0, (%esi)
+ ; X86-NEXT:    movl %esi, %eax
+-; X86-NEXT:    addl $20, %esp
++; X86-NEXT:    addl $24, %esp
+ ; X86-NEXT:    popl %esi
+-; X86-NEXT:    popl %edi
+ ; X86-NEXT:    retl $4
+ entry:
+   %minnum = call fp128 @llvm.experimental.constrained.minnum.f128(fp128 %x, fp128 %y, metadata !"fpexcept.strict") #0
+@@ -713,9 +585,8 @@
+ ;
+ ; X86-LABEL: nearbyint:
+ ; X86:       # %bb.0: # %entry
+-; X86-NEXT:    pushl %edi
+ ; X86-NEXT:    pushl %esi
+-; X86-NEXT:    subl $20, %esp
++; X86-NEXT:    subl $24, %esp
+ ; X86-NEXT:    movl {{[0-9]+}}(%esp), %esi
+ ; X86-NEXT:    subl $12, %esp
+ ; X86-NEXT:    leal {{[0-9]+}}(%esp), %eax
+@@ -726,18 +597,11 @@
+ ; X86-NEXT:    pushl %eax
+ ; X86-NEXT:    calll nearbyintl
+ ; X86-NEXT:    addl $28, %esp
+-; X86-NEXT:    movl (%esp), %eax
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edi
+-; X86-NEXT:    movl %edi, 8(%esi)
+-; X86-NEXT:    movl %edx, 12(%esi)
+-; X86-NEXT:    movl %eax, (%esi)
+-; X86-NEXT:    movl %ecx, 4(%esi)
++; X86-NEXT:    movaps (%esp), %xmm0
++; X86-NEXT:    movaps %xmm0, (%esi)
+ ; X86-NEXT:    movl %esi, %eax
+-; X86-NEXT:    addl $20, %esp
++; X86-NEXT:    addl $24, %esp
+ ; X86-NEXT:    popl %esi
+-; X86-NEXT:    popl %edi
+ ; X86-NEXT:    retl $4
+ entry:
+   %nearbyint = call fp128 @llvm.experimental.constrained.nearbyint.f128(fp128 %x, metadata !"round.dynamic", metadata !"fpexcept.strict") #0
+@@ -754,9 +618,8 @@
+ ;
+ ; X86-LABEL: pow:
+ ; X86:       # %bb.0: # %entry
+-; X86-NEXT:    pushl %edi
+ ; X86-NEXT:    pushl %esi
+-; X86-NEXT:    subl $20, %esp
++; X86-NEXT:    subl $24, %esp
+ ; X86-NEXT:    movl {{[0-9]+}}(%esp), %esi
+ ; X86-NEXT:    subl $12, %esp
+ ; X86-NEXT:    leal {{[0-9]+}}(%esp), %eax
+@@ -771,18 +634,11 @@
+ ; X86-NEXT:    pushl %eax
+ ; X86-NEXT:    calll powl
+ ; X86-NEXT:    addl $44, %esp
+-; X86-NEXT:    movl (%esp), %eax
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edi
+-; X86-NEXT:    movl %edi, 8(%esi)
+-; X86-NEXT:    movl %edx, 12(%esi)
+-; X86-NEXT:    movl %eax, (%esi)
+-; X86-NEXT:    movl %ecx, 4(%esi)
++; X86-NEXT:    movaps (%esp), %xmm0
++; X86-NEXT:    movaps %xmm0, (%esi)
+ ; X86-NEXT:    movl %esi, %eax
+-; X86-NEXT:    addl $20, %esp
++; X86-NEXT:    addl $24, %esp
+ ; X86-NEXT:    popl %esi
+-; X86-NEXT:    popl %edi
+ ; X86-NEXT:    retl $4
+ entry:
+   %pow = call fp128 @llvm.experimental.constrained.pow.f128(fp128 %x, fp128 %y, metadata !"round.dynamic", metadata !"fpexcept.strict") #0
+@@ -799,9 +655,8 @@
+ ;
+ ; X86-LABEL: powi:
+ ; X86:       # %bb.0: # %entry
+-; X86-NEXT:    pushl %edi
+ ; X86-NEXT:    pushl %esi
+-; X86-NEXT:    subl $20, %esp
++; X86-NEXT:    subl $24, %esp
+ ; X86-NEXT:    movl {{[0-9]+}}(%esp), %esi
+ ; X86-NEXT:    subl $8, %esp
+ ; X86-NEXT:    leal {{[0-9]+}}(%esp), %eax
+@@ -813,18 +668,11 @@
+ ; X86-NEXT:    pushl %eax
+ ; X86-NEXT:    calll __powitf2
+ ; X86-NEXT:    addl $28, %esp
+-; X86-NEXT:    movl (%esp), %eax
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edi
+-; X86-NEXT:    movl %edi, 8(%esi)
+-; X86-NEXT:    movl %edx, 12(%esi)
+-; X86-NEXT:    movl %eax, (%esi)
+-; X86-NEXT:    movl %ecx, 4(%esi)
++; X86-NEXT:    movaps (%esp), %xmm0
++; X86-NEXT:    movaps %xmm0, (%esi)
+ ; X86-NEXT:    movl %esi, %eax
+-; X86-NEXT:    addl $20, %esp
++; X86-NEXT:    addl $24, %esp
+ ; X86-NEXT:    popl %esi
+-; X86-NEXT:    popl %edi
+ ; X86-NEXT:    retl $4
+ entry:
+   %powi = call fp128 @llvm.experimental.constrained.powi.f128(fp128 %x, i32 %y, metadata !"round.dynamic", metadata !"fpexcept.strict") #0
+@@ -841,9 +689,8 @@
+ ;
+ ; X86-LABEL: rint:
+ ; X86:       # %bb.0: # %entry
+-; X86-NEXT:    pushl %edi
+ ; X86-NEXT:    pushl %esi
+-; X86-NEXT:    subl $20, %esp
++; X86-NEXT:    subl $24, %esp
+ ; X86-NEXT:    movl {{[0-9]+}}(%esp), %esi
+ ; X86-NEXT:    subl $12, %esp
+ ; X86-NEXT:    leal {{[0-9]+}}(%esp), %eax
+@@ -854,18 +701,11 @@
+ ; X86-NEXT:    pushl %eax
+ ; X86-NEXT:    calll rintl
+ ; X86-NEXT:    addl $28, %esp
+-; X86-NEXT:    movl (%esp), %eax
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edi
+-; X86-NEXT:    movl %edi, 8(%esi)
+-; X86-NEXT:    movl %edx, 12(%esi)
+-; X86-NEXT:    movl %eax, (%esi)
+-; X86-NEXT:    movl %ecx, 4(%esi)
++; X86-NEXT:    movaps (%esp), %xmm0
++; X86-NEXT:    movaps %xmm0, (%esi)
+ ; X86-NEXT:    movl %esi, %eax
+-; X86-NEXT:    addl $20, %esp
++; X86-NEXT:    addl $24, %esp
+ ; X86-NEXT:    popl %esi
+-; X86-NEXT:    popl %edi
+ ; X86-NEXT:    retl $4
+ entry:
+   %rint = call fp128 @llvm.experimental.constrained.rint.f128(fp128 %x, metadata !"round.dynamic", metadata !"fpexcept.strict") #0
+@@ -882,9 +722,8 @@
+ ;
+ ; X86-LABEL: round:
+ ; X86:       # %bb.0: # %entry
+-; X86-NEXT:    pushl %edi
+ ; X86-NEXT:    pushl %esi
+-; X86-NEXT:    subl $20, %esp
++; X86-NEXT:    subl $24, %esp
+ ; X86-NEXT:    movl {{[0-9]+}}(%esp), %esi
+ ; X86-NEXT:    subl $12, %esp
+ ; X86-NEXT:    leal {{[0-9]+}}(%esp), %eax
+@@ -895,18 +734,11 @@
+ ; X86-NEXT:    pushl %eax
+ ; X86-NEXT:    calll roundl
+ ; X86-NEXT:    addl $28, %esp
+-; X86-NEXT:    movl (%esp), %eax
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edi
+-; X86-NEXT:    movl %edi, 8(%esi)
+-; X86-NEXT:    movl %edx, 12(%esi)
+-; X86-NEXT:    movl %eax, (%esi)
+-; X86-NEXT:    movl %ecx, 4(%esi)
++; X86-NEXT:    movaps (%esp), %xmm0
++; X86-NEXT:    movaps %xmm0, (%esi)
+ ; X86-NEXT:    movl %esi, %eax
+-; X86-NEXT:    addl $20, %esp
++; X86-NEXT:    addl $24, %esp
+ ; X86-NEXT:    popl %esi
+-; X86-NEXT:    popl %edi
+ ; X86-NEXT:    retl $4
+ entry:
+   %round = call fp128 @llvm.experimental.constrained.round.f128(fp128 %x, metadata !"fpexcept.strict") #0
+@@ -923,9 +755,8 @@
+ ;
+ ; X86-LABEL: roundeven:
+ ; X86:       # %bb.0: # %entry
+-; X86-NEXT:    pushl %edi
+ ; X86-NEXT:    pushl %esi
+-; X86-NEXT:    subl $20, %esp
++; X86-NEXT:    subl $24, %esp
+ ; X86-NEXT:    movl {{[0-9]+}}(%esp), %esi
+ ; X86-NEXT:    subl $12, %esp
+ ; X86-NEXT:    leal {{[0-9]+}}(%esp), %eax
+@@ -936,18 +767,11 @@
+ ; X86-NEXT:    pushl %eax
+ ; X86-NEXT:    calll roundevenl
+ ; X86-NEXT:    addl $28, %esp
+-; X86-NEXT:    movl (%esp), %eax
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edi
+-; X86-NEXT:    movl %edi, 8(%esi)
+-; X86-NEXT:    movl %edx, 12(%esi)
+-; X86-NEXT:    movl %eax, (%esi)
+-; X86-NEXT:    movl %ecx, 4(%esi)
++; X86-NEXT:    movaps (%esp), %xmm0
++; X86-NEXT:    movaps %xmm0, (%esi)
+ ; X86-NEXT:    movl %esi, %eax
+-; X86-NEXT:    addl $20, %esp
++; X86-NEXT:    addl $24, %esp
+ ; X86-NEXT:    popl %esi
+-; X86-NEXT:    popl %edi
+ ; X86-NEXT:    retl $4
+ entry:
+   %roundeven = call fp128 @llvm.experimental.constrained.roundeven.f128(fp128 %x, metadata !"fpexcept.strict") #0
+@@ -964,9 +788,8 @@
+ ;
+ ; X86-LABEL: sin:
+ ; X86:       # %bb.0: # %entry
+-; X86-NEXT:    pushl %edi
+ ; X86-NEXT:    pushl %esi
+-; X86-NEXT:    subl $20, %esp
++; X86-NEXT:    subl $24, %esp
+ ; X86-NEXT:    movl {{[0-9]+}}(%esp), %esi
+ ; X86-NEXT:    subl $12, %esp
+ ; X86-NEXT:    leal {{[0-9]+}}(%esp), %eax
+@@ -977,18 +800,11 @@
+ ; X86-NEXT:    pushl %eax
+ ; X86-NEXT:    calll sinl
+ ; X86-NEXT:    addl $28, %esp
+-; X86-NEXT:    movl (%esp), %eax
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edi
+-; X86-NEXT:    movl %edi, 8(%esi)
+-; X86-NEXT:    movl %edx, 12(%esi)
+-; X86-NEXT:    movl %eax, (%esi)
+-; X86-NEXT:    movl %ecx, 4(%esi)
++; X86-NEXT:    movaps (%esp), %xmm0
++; X86-NEXT:    movaps %xmm0, (%esi)
+ ; X86-NEXT:    movl %esi, %eax
+-; X86-NEXT:    addl $20, %esp
++; X86-NEXT:    addl $24, %esp
+ ; X86-NEXT:    popl %esi
+-; X86-NEXT:    popl %edi
+ ; X86-NEXT:    retl $4
+ entry:
+   %sin = call fp128 @llvm.experimental.constrained.sin.f128(fp128 %x, metadata !"round.dynamic", metadata !"fpexcept.strict") #0
+@@ -1005,9 +821,8 @@
+ ;
+ ; X86-LABEL: sqrt:
+ ; X86:       # %bb.0: # %entry
+-; X86-NEXT:    pushl %edi
+ ; X86-NEXT:    pushl %esi
+-; X86-NEXT:    subl $20, %esp
++; X86-NEXT:    subl $24, %esp
+ ; X86-NEXT:    movl {{[0-9]+}}(%esp), %esi
+ ; X86-NEXT:    subl $12, %esp
+ ; X86-NEXT:    leal {{[0-9]+}}(%esp), %eax
+@@ -1018,18 +833,11 @@
+ ; X86-NEXT:    pushl %eax
+ ; X86-NEXT:    calll sqrtl
+ ; X86-NEXT:    addl $28, %esp
+-; X86-NEXT:    movl (%esp), %eax
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edi
+-; X86-NEXT:    movl %edi, 8(%esi)
+-; X86-NEXT:    movl %edx, 12(%esi)
+-; X86-NEXT:    movl %eax, (%esi)
+-; X86-NEXT:    movl %ecx, 4(%esi)
++; X86-NEXT:    movaps (%esp), %xmm0
++; X86-NEXT:    movaps %xmm0, (%esi)
+ ; X86-NEXT:    movl %esi, %eax
+-; X86-NEXT:    addl $20, %esp
++; X86-NEXT:    addl $24, %esp
+ ; X86-NEXT:    popl %esi
+-; X86-NEXT:    popl %edi
+ ; X86-NEXT:    retl $4
+ entry:
+   %sqrt = call fp128 @llvm.experimental.constrained.sqrt.f128(fp128 %x, metadata !"round.dynamic", metadata !"fpexcept.strict") #0
+@@ -1046,9 +854,8 @@
+ ;
+ ; X86-LABEL: trunc:
+ ; X86:       # %bb.0: # %entry
+-; X86-NEXT:    pushl %edi
+ ; X86-NEXT:    pushl %esi
+-; X86-NEXT:    subl $20, %esp
++; X86-NEXT:    subl $24, %esp
+ ; X86-NEXT:    movl {{[0-9]+}}(%esp), %esi
+ ; X86-NEXT:    subl $12, %esp
+ ; X86-NEXT:    leal {{[0-9]+}}(%esp), %eax
+@@ -1059,18 +866,11 @@
+ ; X86-NEXT:    pushl %eax
+ ; X86-NEXT:    calll truncl
+ ; X86-NEXT:    addl $28, %esp
+-; X86-NEXT:    movl (%esp), %eax
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edi
+-; X86-NEXT:    movl %edi, 8(%esi)
+-; X86-NEXT:    movl %edx, 12(%esi)
+-; X86-NEXT:    movl %eax, (%esi)
+-; X86-NEXT:    movl %ecx, 4(%esi)
++; X86-NEXT:    movaps (%esp), %xmm0
++; X86-NEXT:    movaps %xmm0, (%esi)
+ ; X86-NEXT:    movl %esi, %eax
+-; X86-NEXT:    addl $20, %esp
++; X86-NEXT:    addl $24, %esp
+ ; X86-NEXT:    popl %esi
+-; X86-NEXT:    popl %edi
+ ; X86-NEXT:    retl $4
+ entry:
+   %trunc = call fp128 @llvm.experimental.constrained.trunc.f128(fp128 %x, metadata !"fpexcept.strict") #0
+diff --git a/llvm/test/CodeGen/X86/fp128-libcalls.ll b/llvm/test/CodeGen/X86/fp128-libcalls.ll
+--- a/llvm/test/CodeGen/X86/fp128-libcalls.ll
++++ b/llvm/test/CodeGen/X86/fp128-libcalls.ll
+@@ -22,8 +22,7 @@
+ ;
+ ; X86-LABEL: Test128Add:
+ ; X86:       # %bb.0: # %entry
+-; X86-NEXT:    pushl %esi
+-; X86-NEXT:    subl $36, %esp
++; X86-NEXT:    subl $40, %esp
+ ; X86-NEXT:    leal {{[0-9]+}}(%esp), %eax
+ ; X86-NEXT:    pushl {{[0-9]+}}(%esp)
+ ; X86-NEXT:    pushl {{[0-9]+}}(%esp)
+@@ -36,16 +35,9 @@
+ ; X86-NEXT:    pushl %eax
+ ; X86-NEXT:    calll __addtf3
+ ; X86-NEXT:    addl $44, %esp
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %eax
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %esi
+-; X86-NEXT:    movl %esi, vf128+12
+-; X86-NEXT:    movl %edx, vf128+8
+-; X86-NEXT:    movl %ecx, vf128+4
+-; X86-NEXT:    movl %eax, vf128
+-; X86-NEXT:    addl $24, %esp
+-; X86-NEXT:    popl %esi
++; X86-NEXT:    movaps (%esp), %xmm0
++; X86-NEXT:    movaps %xmm0, vf128
++; X86-NEXT:    addl $28, %esp
+ ; X86-NEXT:    retl
+ entry:
+   %add = fadd fp128 %d1, %d2
+@@ -66,8 +58,7 @@
+ ;
+ ; X86-LABEL: Test128_1Add:
+ ; X86:       # %bb.0: # %entry
+-; X86-NEXT:    pushl %esi
+-; X86-NEXT:    subl $36, %esp
++; X86-NEXT:    subl $40, %esp
+ ; X86-NEXT:    leal {{[0-9]+}}(%esp), %eax
+ ; X86-NEXT:    pushl {{[0-9]+}}(%esp)
+ ; X86-NEXT:    pushl {{[0-9]+}}(%esp)
+@@ -80,16 +71,9 @@
+ ; X86-NEXT:    pushl %eax
+ ; X86-NEXT:    calll __addtf3
+ ; X86-NEXT:    addl $44, %esp
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %eax
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %esi
+-; X86-NEXT:    movl %esi, vf128+8
+-; X86-NEXT:    movl %edx, vf128+12
+-; X86-NEXT:    movl %eax, vf128
+-; X86-NEXT:    movl %ecx, vf128+4
+-; X86-NEXT:    addl $24, %esp
+-; X86-NEXT:    popl %esi
++; X86-NEXT:    movaps (%esp), %xmm0
++; X86-NEXT:    movaps %xmm0, vf128
++; X86-NEXT:    addl $28, %esp
+ ; X86-NEXT:    retl
+ entry:
+   %0 = load fp128, ptr @vf128, align 16
+@@ -109,8 +93,7 @@
+ ;
+ ; X86-LABEL: Test128Sub:
+ ; X86:       # %bb.0: # %entry
+-; X86-NEXT:    pushl %esi
+-; X86-NEXT:    subl $36, %esp
++; X86-NEXT:    subl $40, %esp
+ ; X86-NEXT:    leal {{[0-9]+}}(%esp), %eax
+ ; X86-NEXT:    pushl {{[0-9]+}}(%esp)
+ ; X86-NEXT:    pushl {{[0-9]+}}(%esp)
+@@ -123,16 +106,9 @@
+ ; X86-NEXT:    pushl %eax
+ ; X86-NEXT:    calll __subtf3
+ ; X86-NEXT:    addl $44, %esp
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %eax
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %esi
+-; X86-NEXT:    movl %esi, vf128+12
+-; X86-NEXT:    movl %edx, vf128+8
+-; X86-NEXT:    movl %ecx, vf128+4
+-; X86-NEXT:    movl %eax, vf128
+-; X86-NEXT:    addl $24, %esp
+-; X86-NEXT:    popl %esi
++; X86-NEXT:    movaps (%esp), %xmm0
++; X86-NEXT:    movaps %xmm0, vf128
++; X86-NEXT:    addl $28, %esp
+ ; X86-NEXT:    retl
+ entry:
+   %sub = fsub fp128 %d1, %d2
+@@ -153,8 +129,7 @@
+ ;
+ ; X86-LABEL: Test128_1Sub:
+ ; X86:       # %bb.0: # %entry
+-; X86-NEXT:    pushl %esi
+-; X86-NEXT:    subl $36, %esp
++; X86-NEXT:    subl $40, %esp
+ ; X86-NEXT:    leal {{[0-9]+}}(%esp), %eax
+ ; X86-NEXT:    pushl {{[0-9]+}}(%esp)
+ ; X86-NEXT:    pushl {{[0-9]+}}(%esp)
+@@ -167,16 +142,9 @@
+ ; X86-NEXT:    pushl %eax
+ ; X86-NEXT:    calll __subtf3
+ ; X86-NEXT:    addl $44, %esp
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %eax
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %esi
+-; X86-NEXT:    movl %esi, vf128+8
+-; X86-NEXT:    movl %edx, vf128+12
+-; X86-NEXT:    movl %eax, vf128
+-; X86-NEXT:    movl %ecx, vf128+4
+-; X86-NEXT:    addl $24, %esp
+-; X86-NEXT:    popl %esi
++; X86-NEXT:    movaps (%esp), %xmm0
++; X86-NEXT:    movaps %xmm0, vf128
++; X86-NEXT:    addl $28, %esp
+ ; X86-NEXT:    retl
+ entry:
+   %0 = load fp128, ptr @vf128, align 16
+@@ -196,8 +164,7 @@
+ ;
+ ; X86-LABEL: Test128Mul:
+ ; X86:       # %bb.0: # %entry
+-; X86-NEXT:    pushl %esi
+-; X86-NEXT:    subl $36, %esp
++; X86-NEXT:    subl $40, %esp
+ ; X86-NEXT:    leal {{[0-9]+}}(%esp), %eax
+ ; X86-NEXT:    pushl {{[0-9]+}}(%esp)
+ ; X86-NEXT:    pushl {{[0-9]+}}(%esp)
+@@ -210,16 +177,9 @@
+ ; X86-NEXT:    pushl %eax
+ ; X86-NEXT:    calll __multf3
+ ; X86-NEXT:    addl $44, %esp
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %eax
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %esi
+-; X86-NEXT:    movl %esi, vf128+12
+-; X86-NEXT:    movl %edx, vf128+8
+-; X86-NEXT:    movl %ecx, vf128+4
+-; X86-NEXT:    movl %eax, vf128
+-; X86-NEXT:    addl $24, %esp
+-; X86-NEXT:    popl %esi
++; X86-NEXT:    movaps (%esp), %xmm0
++; X86-NEXT:    movaps %xmm0, vf128
++; X86-NEXT:    addl $28, %esp
+ ; X86-NEXT:    retl
+ entry:
+   %mul = fmul fp128 %d1, %d2
+@@ -240,8 +200,7 @@
+ ;
+ ; X86-LABEL: Test128_1Mul:
+ ; X86:       # %bb.0: # %entry
+-; X86-NEXT:    pushl %esi
+-; X86-NEXT:    subl $36, %esp
++; X86-NEXT:    subl $40, %esp
+ ; X86-NEXT:    leal {{[0-9]+}}(%esp), %eax
+ ; X86-NEXT:    pushl {{[0-9]+}}(%esp)
+ ; X86-NEXT:    pushl {{[0-9]+}}(%esp)
+@@ -254,16 +213,9 @@
+ ; X86-NEXT:    pushl %eax
+ ; X86-NEXT:    calll __multf3
+ ; X86-NEXT:    addl $44, %esp
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %eax
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %esi
+-; X86-NEXT:    movl %esi, vf128+8
+-; X86-NEXT:    movl %edx, vf128+12
+-; X86-NEXT:    movl %eax, vf128
+-; X86-NEXT:    movl %ecx, vf128+4
+-; X86-NEXT:    addl $24, %esp
+-; X86-NEXT:    popl %esi
++; X86-NEXT:    movaps (%esp), %xmm0
++; X86-NEXT:    movaps %xmm0, vf128
++; X86-NEXT:    addl $28, %esp
+ ; X86-NEXT:    retl
+ entry:
+   %0 = load fp128, ptr @vf128, align 16
+@@ -283,8 +235,7 @@
+ ;
+ ; X86-LABEL: Test128Div:
+ ; X86:       # %bb.0: # %entry
+-; X86-NEXT:    pushl %esi
+-; X86-NEXT:    subl $36, %esp
++; X86-NEXT:    subl $40, %esp
+ ; X86-NEXT:    leal {{[0-9]+}}(%esp), %eax
+ ; X86-NEXT:    pushl {{[0-9]+}}(%esp)
+ ; X86-NEXT:    pushl {{[0-9]+}}(%esp)
+@@ -297,16 +248,9 @@
+ ; X86-NEXT:    pushl %eax
+ ; X86-NEXT:    calll __divtf3
+ ; X86-NEXT:    addl $44, %esp
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %eax
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %esi
+-; X86-NEXT:    movl %esi, vf128+12
+-; X86-NEXT:    movl %edx, vf128+8
+-; X86-NEXT:    movl %ecx, vf128+4
+-; X86-NEXT:    movl %eax, vf128
+-; X86-NEXT:    addl $24, %esp
+-; X86-NEXT:    popl %esi
++; X86-NEXT:    movaps (%esp), %xmm0
++; X86-NEXT:    movaps %xmm0, vf128
++; X86-NEXT:    addl $28, %esp
+ ; X86-NEXT:    retl
+ entry:
+   %div = fdiv fp128 %d1, %d2
+@@ -327,8 +271,7 @@
+ ;
+ ; X86-LABEL: Test128_1Div:
+ ; X86:       # %bb.0: # %entry
+-; X86-NEXT:    pushl %esi
+-; X86-NEXT:    subl $36, %esp
++; X86-NEXT:    subl $40, %esp
+ ; X86-NEXT:    leal {{[0-9]+}}(%esp), %eax
+ ; X86-NEXT:    pushl {{[0-9]+}}(%esp)
+ ; X86-NEXT:    pushl {{[0-9]+}}(%esp)
+@@ -341,16 +284,9 @@
+ ; X86-NEXT:    pushl %eax
+ ; X86-NEXT:    calll __divtf3
+ ; X86-NEXT:    addl $44, %esp
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %eax
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %esi
+-; X86-NEXT:    movl %esi, vf128+8
+-; X86-NEXT:    movl %edx, vf128+12
+-; X86-NEXT:    movl %eax, vf128
+-; X86-NEXT:    movl %ecx, vf128+4
+-; X86-NEXT:    addl $24, %esp
+-; X86-NEXT:    popl %esi
++; X86-NEXT:    movaps (%esp), %xmm0
++; X86-NEXT:    movaps %xmm0, vf128
++; X86-NEXT:    addl $28, %esp
+ ; X86-NEXT:    retl
+ entry:
+   %0 = load fp128, ptr @vf128, align 16
+@@ -370,8 +306,7 @@
+ ;
+ ; X86-LABEL: Test128Rem:
+ ; X86:       # %bb.0: # %entry
+-; X86-NEXT:    pushl %esi
+-; X86-NEXT:    subl $36, %esp
++; X86-NEXT:    subl $40, %esp
+ ; X86-NEXT:    leal {{[0-9]+}}(%esp), %eax
+ ; X86-NEXT:    pushl {{[0-9]+}}(%esp)
+ ; X86-NEXT:    pushl {{[0-9]+}}(%esp)
+@@ -384,16 +319,9 @@
+ ; X86-NEXT:    pushl %eax
+ ; X86-NEXT:    calll fmodl
+ ; X86-NEXT:    addl $44, %esp
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %eax
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %esi
+-; X86-NEXT:    movl %esi, vf128+12
+-; X86-NEXT:    movl %edx, vf128+8
+-; X86-NEXT:    movl %ecx, vf128+4
+-; X86-NEXT:    movl %eax, vf128
+-; X86-NEXT:    addl $24, %esp
+-; X86-NEXT:    popl %esi
++; X86-NEXT:    movaps (%esp), %xmm0
++; X86-NEXT:    movaps %xmm0, vf128
++; X86-NEXT:    addl $28, %esp
+ ; X86-NEXT:    retl
+ entry:
+   %div = frem fp128 %d1, %d2
+@@ -414,8 +342,7 @@
+ ;
+ ; X86-LABEL: Test128_1Rem:
+ ; X86:       # %bb.0: # %entry
+-; X86-NEXT:    pushl %esi
+-; X86-NEXT:    subl $36, %esp
++; X86-NEXT:    subl $40, %esp
+ ; X86-NEXT:    leal {{[0-9]+}}(%esp), %eax
+ ; X86-NEXT:    pushl {{[0-9]+}}(%esp)
+ ; X86-NEXT:    pushl {{[0-9]+}}(%esp)
+@@ -428,16 +355,9 @@
+ ; X86-NEXT:    pushl %eax
+ ; X86-NEXT:    calll fmodl
+ ; X86-NEXT:    addl $44, %esp
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %eax
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %esi
+-; X86-NEXT:    movl %esi, vf128+8
+-; X86-NEXT:    movl %edx, vf128+12
+-; X86-NEXT:    movl %eax, vf128
+-; X86-NEXT:    movl %ecx, vf128+4
+-; X86-NEXT:    addl $24, %esp
+-; X86-NEXT:    popl %esi
++; X86-NEXT:    movaps (%esp), %xmm0
++; X86-NEXT:    movaps %xmm0, vf128
++; X86-NEXT:    addl $28, %esp
+ ; X86-NEXT:    retl
+ entry:
+   %0 = load fp128, ptr @vf128, align 16
+@@ -457,8 +377,7 @@
+ ;
+ ; X86-LABEL: Test128Sqrt:
+ ; X86:       # %bb.0: # %entry
+-; X86-NEXT:    pushl %esi
+-; X86-NEXT:    subl $36, %esp
++; X86-NEXT:    subl $40, %esp
+ ; X86-NEXT:    leal {{[0-9]+}}(%esp), %eax
+ ; X86-NEXT:    pushl {{[0-9]+}}(%esp)
+ ; X86-NEXT:    pushl {{[0-9]+}}(%esp)
+@@ -467,16 +386,9 @@
+ ; X86-NEXT:    pushl %eax
+ ; X86-NEXT:    calll sqrtl
+ ; X86-NEXT:    addl $28, %esp
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %eax
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %esi
+-; X86-NEXT:    movl %esi, vf128+12
+-; X86-NEXT:    movl %edx, vf128+8
+-; X86-NEXT:    movl %ecx, vf128+4
+-; X86-NEXT:    movl %eax, vf128
+-; X86-NEXT:    addl $24, %esp
+-; X86-NEXT:    popl %esi
++; X86-NEXT:    movaps (%esp), %xmm0
++; X86-NEXT:    movaps %xmm0, vf128
++; X86-NEXT:    addl $28, %esp
+ ; X86-NEXT:    retl
+ entry:
+   %sqrt = call fp128 @llvm.sqrt.f128(fp128 %d1)
+@@ -496,8 +408,7 @@
+ ;
+ ; X86-LABEL: Test128Sin:
+ ; X86:       # %bb.0: # %entry
+-; X86-NEXT:    pushl %esi
+-; X86-NEXT:    subl $36, %esp
++; X86-NEXT:    subl $40, %esp
+ ; X86-NEXT:    leal {{[0-9]+}}(%esp), %eax
+ ; X86-NEXT:    pushl {{[0-9]+}}(%esp)
+ ; X86-NEXT:    pushl {{[0-9]+}}(%esp)
+@@ -506,16 +417,9 @@
+ ; X86-NEXT:    pushl %eax
+ ; X86-NEXT:    calll sinl
+ ; X86-NEXT:    addl $28, %esp
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %eax
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %esi
+-; X86-NEXT:    movl %esi, vf128+12
+-; X86-NEXT:    movl %edx, vf128+8
+-; X86-NEXT:    movl %ecx, vf128+4
+-; X86-NEXT:    movl %eax, vf128
+-; X86-NEXT:    addl $24, %esp
+-; X86-NEXT:    popl %esi
++; X86-NEXT:    movaps (%esp), %xmm0
++; X86-NEXT:    movaps %xmm0, vf128
++; X86-NEXT:    addl $28, %esp
+ ; X86-NEXT:    retl
+ entry:
+   %sqrt = call fp128 @llvm.sin.f128(fp128 %d1)
+@@ -535,8 +439,7 @@
+ ;
+ ; X86-LABEL: Test128Cos:
+ ; X86:       # %bb.0: # %entry
+-; X86-NEXT:    pushl %esi
+-; X86-NEXT:    subl $36, %esp
++; X86-NEXT:    subl $40, %esp
+ ; X86-NEXT:    leal {{[0-9]+}}(%esp), %eax
+ ; X86-NEXT:    pushl {{[0-9]+}}(%esp)
+ ; X86-NEXT:    pushl {{[0-9]+}}(%esp)
+@@ -545,16 +448,9 @@
+ ; X86-NEXT:    pushl %eax
+ ; X86-NEXT:    calll cosl
+ ; X86-NEXT:    addl $28, %esp
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %eax
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %esi
+-; X86-NEXT:    movl %esi, vf128+12
+-; X86-NEXT:    movl %edx, vf128+8
+-; X86-NEXT:    movl %ecx, vf128+4
+-; X86-NEXT:    movl %eax, vf128
+-; X86-NEXT:    addl $24, %esp
+-; X86-NEXT:    popl %esi
++; X86-NEXT:    movaps (%esp), %xmm0
++; X86-NEXT:    movaps %xmm0, vf128
++; X86-NEXT:    addl $28, %esp
+ ; X86-NEXT:    retl
+ entry:
+   %sqrt = call fp128 @llvm.cos.f128(fp128 %d1)
+@@ -574,8 +470,7 @@
+ ;
+ ; X86-LABEL: Test128Ceil:
+ ; X86:       # %bb.0: # %entry
+-; X86-NEXT:    pushl %esi
+-; X86-NEXT:    subl $36, %esp
++; X86-NEXT:    subl $40, %esp
+ ; X86-NEXT:    leal {{[0-9]+}}(%esp), %eax
+ ; X86-NEXT:    pushl {{[0-9]+}}(%esp)
+ ; X86-NEXT:    pushl {{[0-9]+}}(%esp)
+@@ -584,16 +479,9 @@
+ ; X86-NEXT:    pushl %eax
+ ; X86-NEXT:    calll ceill
+ ; X86-NEXT:    addl $28, %esp
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %eax
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %esi
+-; X86-NEXT:    movl %esi, vf128+12
+-; X86-NEXT:    movl %edx, vf128+8
+-; X86-NEXT:    movl %ecx, vf128+4
+-; X86-NEXT:    movl %eax, vf128
+-; X86-NEXT:    addl $24, %esp
+-; X86-NEXT:    popl %esi
++; X86-NEXT:    movaps (%esp), %xmm0
++; X86-NEXT:    movaps %xmm0, vf128
++; X86-NEXT:    addl $28, %esp
+ ; X86-NEXT:    retl
+ entry:
+   %sqrt = call fp128 @llvm.ceil.f128(fp128 %d1)
+@@ -613,8 +501,7 @@
+ ;
+ ; X86-LABEL: Test128Floor:
+ ; X86:       # %bb.0: # %entry
+-; X86-NEXT:    pushl %esi
+-; X86-NEXT:    subl $36, %esp
++; X86-NEXT:    subl $40, %esp
+ ; X86-NEXT:    leal {{[0-9]+}}(%esp), %eax
+ ; X86-NEXT:    pushl {{[0-9]+}}(%esp)
+ ; X86-NEXT:    pushl {{[0-9]+}}(%esp)
+@@ -623,16 +510,9 @@
+ ; X86-NEXT:    pushl %eax
+ ; X86-NEXT:    calll floorl
+ ; X86-NEXT:    addl $28, %esp
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %eax
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %esi
+-; X86-NEXT:    movl %esi, vf128+12
+-; X86-NEXT:    movl %edx, vf128+8
+-; X86-NEXT:    movl %ecx, vf128+4
+-; X86-NEXT:    movl %eax, vf128
+-; X86-NEXT:    addl $24, %esp
+-; X86-NEXT:    popl %esi
++; X86-NEXT:    movaps (%esp), %xmm0
++; X86-NEXT:    movaps %xmm0, vf128
++; X86-NEXT:    addl $28, %esp
+ ; X86-NEXT:    retl
+ entry:
+   %sqrt = call fp128 @llvm.floor.f128(fp128 %d1)
+@@ -652,8 +532,7 @@
+ ;
+ ; X86-LABEL: Test128Trunc:
+ ; X86:       # %bb.0: # %entry
+-; X86-NEXT:    pushl %esi
+-; X86-NEXT:    subl $36, %esp
++; X86-NEXT:    subl $40, %esp
+ ; X86-NEXT:    leal {{[0-9]+}}(%esp), %eax
+ ; X86-NEXT:    pushl {{[0-9]+}}(%esp)
+ ; X86-NEXT:    pushl {{[0-9]+}}(%esp)
+@@ -662,16 +541,9 @@
+ ; X86-NEXT:    pushl %eax
+ ; X86-NEXT:    calll truncl
+ ; X86-NEXT:    addl $28, %esp
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %eax
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %esi
+-; X86-NEXT:    movl %esi, vf128+12
+-; X86-NEXT:    movl %edx, vf128+8
+-; X86-NEXT:    movl %ecx, vf128+4
+-; X86-NEXT:    movl %eax, vf128
+-; X86-NEXT:    addl $24, %esp
+-; X86-NEXT:    popl %esi
++; X86-NEXT:    movaps (%esp), %xmm0
++; X86-NEXT:    movaps %xmm0, vf128
++; X86-NEXT:    addl $28, %esp
+ ; X86-NEXT:    retl
+ entry:
+   %sqrt = call fp128 @llvm.trunc.f128(fp128 %d1)
+@@ -691,8 +563,7 @@
+ ;
+ ; X86-LABEL: Test128Nearbyint:
+ ; X86:       # %bb.0: # %entry
+-; X86-NEXT:    pushl %esi
+-; X86-NEXT:    subl $36, %esp
++; X86-NEXT:    subl $40, %esp
+ ; X86-NEXT:    leal {{[0-9]+}}(%esp), %eax
+ ; X86-NEXT:    pushl {{[0-9]+}}(%esp)
+ ; X86-NEXT:    pushl {{[0-9]+}}(%esp)
+@@ -701,16 +572,9 @@
+ ; X86-NEXT:    pushl %eax
+ ; X86-NEXT:    calll nearbyintl
+ ; X86-NEXT:    addl $28, %esp
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %eax
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %esi
+-; X86-NEXT:    movl %esi, vf128+12
+-; X86-NEXT:    movl %edx, vf128+8
+-; X86-NEXT:    movl %ecx, vf128+4
+-; X86-NEXT:    movl %eax, vf128
+-; X86-NEXT:    addl $24, %esp
+-; X86-NEXT:    popl %esi
++; X86-NEXT:    movaps (%esp), %xmm0
++; X86-NEXT:    movaps %xmm0, vf128
++; X86-NEXT:    addl $28, %esp
+ ; X86-NEXT:    retl
+ entry:
+   %sqrt = call fp128 @llvm.nearbyint.f128(fp128 %d1)
+@@ -730,8 +594,7 @@
+ ;
+ ; X86-LABEL: Test128Rint:
+ ; X86:       # %bb.0: # %entry
+-; X86-NEXT:    pushl %esi
+-; X86-NEXT:    subl $36, %esp
++; X86-NEXT:    subl $40, %esp
+ ; X86-NEXT:    leal {{[0-9]+}}(%esp), %eax
+ ; X86-NEXT:    pushl {{[0-9]+}}(%esp)
+ ; X86-NEXT:    pushl {{[0-9]+}}(%esp)
+@@ -740,16 +603,9 @@
+ ; X86-NEXT:    pushl %eax
+ ; X86-NEXT:    calll rintl
+ ; X86-NEXT:    addl $28, %esp
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %eax
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %esi
+-; X86-NEXT:    movl %esi, vf128+12
+-; X86-NEXT:    movl %edx, vf128+8
+-; X86-NEXT:    movl %ecx, vf128+4
+-; X86-NEXT:    movl %eax, vf128
+-; X86-NEXT:    addl $24, %esp
+-; X86-NEXT:    popl %esi
++; X86-NEXT:    movaps (%esp), %xmm0
++; X86-NEXT:    movaps %xmm0, vf128
++; X86-NEXT:    addl $28, %esp
+ ; X86-NEXT:    retl
+ entry:
+   %sqrt = call fp128 @llvm.rint.f128(fp128 %d1)
+@@ -769,8 +625,7 @@
+ ;
+ ; X86-LABEL: Test128Round:
+ ; X86:       # %bb.0: # %entry
+-; X86-NEXT:    pushl %esi
+-; X86-NEXT:    subl $36, %esp
++; X86-NEXT:    subl $40, %esp
+ ; X86-NEXT:    leal {{[0-9]+}}(%esp), %eax
+ ; X86-NEXT:    pushl {{[0-9]+}}(%esp)
+ ; X86-NEXT:    pushl {{[0-9]+}}(%esp)
+@@ -779,16 +634,9 @@
+ ; X86-NEXT:    pushl %eax
+ ; X86-NEXT:    calll roundl
+ ; X86-NEXT:    addl $28, %esp
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %eax
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %esi
+-; X86-NEXT:    movl %esi, vf128+12
+-; X86-NEXT:    movl %edx, vf128+8
+-; X86-NEXT:    movl %ecx, vf128+4
+-; X86-NEXT:    movl %eax, vf128
+-; X86-NEXT:    addl $24, %esp
+-; X86-NEXT:    popl %esi
++; X86-NEXT:    movaps (%esp), %xmm0
++; X86-NEXT:    movaps %xmm0, vf128
++; X86-NEXT:    addl $28, %esp
+ ; X86-NEXT:    retl
+ entry:
+   %sqrt = call fp128 @llvm.round.f128(fp128 %d1)
+@@ -804,9 +652,8 @@
+ ;
+ ; X86-LABEL: Test128FMA:
+ ; X86:       # %bb.0: # %entry
+-; X86-NEXT:    pushl %edi
+ ; X86-NEXT:    pushl %esi
+-; X86-NEXT:    subl $20, %esp
++; X86-NEXT:    subl $24, %esp
+ ; X86-NEXT:    movl {{[0-9]+}}(%esp), %esi
+ ; X86-NEXT:    subl $12, %esp
+ ; X86-NEXT:    leal {{[0-9]+}}(%esp), %eax
+@@ -825,18 +672,11 @@
+ ; X86-NEXT:    pushl %eax
+ ; X86-NEXT:    calll fmal
+ ; X86-NEXT:    addl $60, %esp
+-; X86-NEXT:    movl (%esp), %eax
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %ecx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edx
+-; X86-NEXT:    movl {{[0-9]+}}(%esp), %edi
+-; X86-NEXT:    movl %edi, 12(%esi)
+-; X86-NEXT:    movl %edx, 8(%esi)
+-; X86-NEXT:    movl %ecx, 4(%esi)
+-; X86-NEXT:    movl %eax, (%esi)
++; X86-NEXT:    movaps (%esp), %xmm0
++; X86-NEXT:    movaps %xmm0, (%esi)
+ ; X86-NEXT:    movl %esi, %eax
+-; X86-NEXT:    addl $20, %esp
++; X86-NEXT:    addl $24, %esp
+ ; X86-NEXT:    popl %esi
+-; X86-NEXT:    popl %edi
+ ; X86-NEXT:    retl $4
+ entry:
+   %call = call fp128 @llvm.fma.f128(fp128 %a, fp128 %b, fp128 %c)
+diff --git a/llvm/test/CodeGen/X86/fpenv-combine.ll b/llvm/test/CodeGen/X86/fpenv-combine.ll
+--- a/llvm/test/CodeGen/X86/fpenv-combine.ll
++++ b/llvm/test/CodeGen/X86/fpenv-combine.ll
+@@ -15,19 +15,19 @@
+ ; X64-NEXT:    subq $40, %rsp
+ ; X64-NEXT:    movq %rsi, %rbx
+ ; X64-NEXT:    movq %rdi, %r14
+-; X64-NEXT:    leaq {{[0-9]+}}(%rsp), %rdi
++; X64-NEXT:    movq %rsp, %rdi
+ ; X64-NEXT:    callq fegetenv@PLT
+ ; X64-NEXT:    movq {{[0-9]+}}(%rsp), %rax
+-; X64-NEXT:    movq {{[0-9]+}}(%rsp), %rcx
++; X64-NEXT:    movq (%rsp), %rcx
+ ; X64-NEXT:    movq {{[0-9]+}}(%rsp), %rdx
+ ; X64-NEXT:    movq {{[0-9]+}}(%rsp), %rsi
+-; X64-NEXT:    movq %rsi, 24(%r14)
++; X64-NEXT:    movq %rsi, 16(%r14)
+ ; X64-NEXT:    movq %rcx, (%r14)
++; X64-NEXT:    movq %rax, 24(%r14)
+ ; X64-NEXT:    movq %rdx, 8(%r14)
+-; X64-NEXT:    movq %rax, 16(%r14)
+-; X64-NEXT:    movq %rax, 16(%rbx)
+-; X64-NEXT:    movq %rsi, 24(%rbx)
++; X64-NEXT:    movq %rsi, 16(%rbx)
+ ; X64-NEXT:    movq %rcx, (%rbx)
++; X64-NEXT:    movq %rax, 24(%rbx)
+ ; X64-NEXT:    movq %rdx, 8(%rbx)
+ ; X64-NEXT:    addq $40, %rsp
+ ; X64-NEXT:    popq %rbx
+@@ -72,9 +72,9 @@
+ ; X64-NEXT:    movq (%rsp), %rax
+ ; X64-NEXT:    andl $1, %eax
+ ; X64-NEXT:    movq %rax, (%rbx)
+-; X64-NEXT:    movq $0, 16(%rbx)
+ ; X64-NEXT:    movq $0, 24(%rbx)
+ ; X64-NEXT:    movq $0, 8(%rbx)
++; X64-NEXT:    movq $0, 16(%rbx)
+ ; X64-NEXT:    addq $32, %rsp
+ ; X64-NEXT:    popq %rbx
+ ; X64-NEXT:    retq
+@@ -94,9 +94,9 @@
+ ; X64-NEXT:    subq $40, %rsp
+ ; X64-NEXT:    movq %rsi, %rbx
+ ; X64-NEXT:    movq %rdi, %r14
+-; X64-NEXT:    leaq {{[0-9]+}}(%rsp), %rdi
++; X64-NEXT:    movq %rsp, %rdi
+ ; X64-NEXT:    callq fegetenv@PLT
+-; X64-NEXT:    movq {{[0-9]+}}(%rsp), %rax
++; X64-NEXT:    movq (%rsp), %rax
+ ; X64-NEXT:    movq {{[0-9]+}}(%rsp), %rcx
+ ; X64-NEXT:    movq {{[0-9]+}}(%rsp), %rdx
+ ; X64-NEXT:    movq {{[0-9]+}}(%rsp), %rsi
+@@ -129,8 +129,8 @@
+ ; X64-NEXT:    movq %rdi, {{[0-9]+}}(%rsp)
+ ; X64-NEXT:    movq %rdx, {{[0-9]+}}(%rsp)
+ ; X64-NEXT:    movq %rcx, {{[0-9]+}}(%rsp)
+-; X64-NEXT:    movq %rax, {{[0-9]+}}(%rsp)
+-; X64-NEXT:    leaq {{[0-9]+}}(%rsp), %rdi
++; X64-NEXT:    movq %rax, (%rsp)
++; X64-NEXT:    movq %rsp, %rdi
+ ; X64-NEXT:    callq fesetenv@PLT
+ ; X64-NEXT:    addq $40, %rsp
+ ; X64-NEXT:    retq
+@@ -182,11 +182,11 @@
+ ; X64-NEXT:    subq $40, %rsp
+ ; X64-NEXT:    movq (%rdi), %rax
+ ; X64-NEXT:    andl $1, %eax
+-; X64-NEXT:    movq %rax, {{[0-9]+}}(%rsp)
++; X64-NEXT:    movq %rax, (%rsp)
+ ; X64-NEXT:    movq $0, {{[0-9]+}}(%rsp)
+ ; X64-NEXT:    movq $0, {{[0-9]+}}(%rsp)
+ ; X64-NEXT:    movq $0, {{[0-9]+}}(%rsp)
+-; X64-NEXT:    leaq {{[0-9]+}}(%rsp), %rdi
++; X64-NEXT:    movq %rsp, %rdi
+ ; X64-NEXT:    callq fesetenv@PLT
+ ; X64-NEXT:    addq $40, %rsp
+ ; X64-NEXT:    retq
+diff --git a/llvm/test/CodeGen/X86/fpenv.ll b/llvm/test/CodeGen/X86/fpenv.ll
+--- a/llvm/test/CodeGen/X86/fpenv.ll
++++ b/llvm/test/CodeGen/X86/fpenv.ll
+@@ -249,20 +249,20 @@
+ define void @get_fpenv_01(ptr %ptr) #0 {
+ ; X86-NOSSE-LABEL: get_fpenv_01:
+ ; X86-NOSSE:       # %bb.0: # %entry
+-; X86-NOSSE-NEXT:    subl $44, %esp
++; X86-NOSSE-NEXT:    subl $60, %esp
+ ; X86-NOSSE-NEXT:    movl {{[0-9]+}}(%esp), %eax
+ ; X86-NOSSE-NEXT:    movl %eax, (%esp)
+ ; X86-NOSSE-NEXT:    calll fegetenv
+-; X86-NOSSE-NEXT:    addl $44, %esp
++; X86-NOSSE-NEXT:    addl $60, %esp
+ ; X86-NOSSE-NEXT:    retl
+ ;
+ ; X86-SSE-LABEL: get_fpenv_01:
+ ; X86-SSE:       # %bb.0: # %entry
+-; X86-SSE-NEXT:    subl $44, %esp
++; X86-SSE-NEXT:    subl $60, %esp
+ ; X86-SSE-NEXT:    movl {{[0-9]+}}(%esp), %eax
+ ; X86-SSE-NEXT:    movl %eax, (%esp)
+ ; X86-SSE-NEXT:    calll fegetenv
+-; X86-SSE-NEXT:    addl $44, %esp
++; X86-SSE-NEXT:    addl $60, %esp
+ ; X86-SSE-NEXT:    retl
+ ;
+ ; X64-LABEL: get_fpenv_01:
+@@ -280,21 +280,21 @@
+ define void @get_fpenv_01_native(ptr %ptr) nounwind {
+ ; X86-NOSSE-LABEL: get_fpenv_01_native:
+ ; X86-NOSSE:       # %bb.0: # %entry
+-; X86-NOSSE-NEXT:    subl $36, %esp
++; X86-NOSSE-NEXT:    subl $44, %esp
+ ; X86-NOSSE-NEXT:    movl {{[0-9]+}}(%esp), %eax
+ ; X86-NOSSE-NEXT:    fnstenv (%eax)
+ ; X86-NOSSE-NEXT:    fldenv (%eax)
+-; X86-NOSSE-NEXT:    addl $36, %esp
++; X86-NOSSE-NEXT:    addl $44, %esp
+ ; X86-NOSSE-NEXT:    retl
+ ;
+ ; X86-SSE-LABEL: get_fpenv_01_native:
+ ; X86-SSE:       # %bb.0: # %entry
+-; X86-SSE-NEXT:    subl $36, %esp
++; X86-SSE-NEXT:    subl $44, %esp
+ ; X86-SSE-NEXT:    movl {{[0-9]+}}(%esp), %eax
+ ; X86-SSE-NEXT:    fnstenv (%eax)
+ ; X86-SSE-NEXT:    fldenv (%eax)
+ ; X86-SSE-NEXT:    stmxcsr 28(%eax)
+-; X86-SSE-NEXT:    addl $36, %esp
++; X86-SSE-NEXT:    addl $44, %esp
+ ; X86-SSE-NEXT:    retl
+ ;
+ ; X64-LABEL: get_fpenv_01_native:
+@@ -312,20 +312,20 @@
+ define void @set_fpenv_01(ptr %ptr) #0 {
+ ; X86-NOSSE-LABEL: set_fpenv_01:
+ ; X86-NOSSE:       # %bb.0: # %entry
+-; X86-NOSSE-NEXT:    subl $44, %esp
++; X86-NOSSE-NEXT:    subl $60, %esp
+ ; X86-NOSSE-NEXT:    movl {{[0-9]+}}(%esp), %eax
+ ; X86-NOSSE-NEXT:    movl %eax, (%esp)
+ ; X86-NOSSE-NEXT:    calll fesetenv
+-; X86-NOSSE-NEXT:    addl $44, %esp
++; X86-NOSSE-NEXT:    addl $60, %esp
+ ; X86-NOSSE-NEXT:    retl
+ ;
+ ; X86-SSE-LABEL: set_fpenv_01:
+ ; X86-SSE:       # %bb.0: # %entry
+-; X86-SSE-NEXT:    subl $44, %esp
++; X86-SSE-NEXT:    subl $60, %esp
+ ; X86-SSE-NEXT:    movl {{[0-9]+}}(%esp), %eax
+ ; X86-SSE-NEXT:    movl %eax, (%esp)
+ ; X86-SSE-NEXT:    calll fesetenv
+-; X86-SSE-NEXT:    addl $44, %esp
++; X86-SSE-NEXT:    addl $60, %esp
+ ; X86-SSE-NEXT:    retl
+ ;
+ ; X64-LABEL: set_fpenv_01:
+@@ -343,19 +343,19 @@
+ define void @set_fpenv_01_native(ptr %ptr) nounwind {
+ ; X86-NOSSE-LABEL: set_fpenv_01_native:
+ ; X86-NOSSE:       # %bb.0: # %entry
+-; X86-NOSSE-NEXT:    subl $36, %esp
++; X86-NOSSE-NEXT:    subl $44, %esp
+ ; X86-NOSSE-NEXT:    movl {{[0-9]+}}(%esp), %eax
+ ; X86-NOSSE-NEXT:    fldenv (%eax)
+-; X86-NOSSE-NEXT:    addl $36, %esp
++; X86-NOSSE-NEXT:    addl $44, %esp
+ ; X86-NOSSE-NEXT:    retl
+ ;
+ ; X86-SSE-LABEL: set_fpenv_01_native:
+ ; X86-SSE:       # %bb.0: # %entry
+-; X86-SSE-NEXT:    subl $36, %esp
++; X86-SSE-NEXT:    subl $44, %esp
+ ; X86-SSE-NEXT:    movl {{[0-9]+}}(%esp), %eax
+ ; X86-SSE-NEXT:    fldenv (%eax)
+ ; X86-SSE-NEXT:    ldmxcsr 28(%eax)
+-; X86-SSE-NEXT:    addl $36, %esp
++; X86-SSE-NEXT:    addl $44, %esp
+ ; X86-SSE-NEXT:    retl
+ ;
+ ; X64-LABEL: set_fpenv_01_native:
+diff --git a/llvm/test/CodeGen/X86/fptosi-sat-scalar.ll b/llvm/test/CodeGen/X86/fptosi-sat-scalar.ll
+--- a/llvm/test/CodeGen/X86/fptosi-sat-scalar.ll
++++ b/llvm/test/CodeGen/X86/fptosi-sat-scalar.ll
+@@ -690,7 +690,7 @@
+ ; X86-X87-NEXT:    pushl %ebx
+ ; X86-X87-NEXT:    pushl %edi
+ ; X86-X87-NEXT:    pushl %esi
+-; X86-X87-NEXT:    subl $44, %esp
++; X86-X87-NEXT:    subl $60, %esp
+ ; X86-X87-NEXT:    flds {{[0-9]+}}(%esp)
+ ; X86-X87-NEXT:    fsts {{[0-9]+}}(%esp)
+ ; X86-X87-NEXT:    leal {{[0-9]+}}(%esp), %eax
+@@ -766,7 +766,7 @@
+ ; X86-X87-NEXT:    andl $15, %edx
+ ; X86-X87-NEXT:    movb %dl, 12(%ecx)
+ ; X86-X87-NEXT:    movl %ecx, %eax
+-; X86-X87-NEXT:    addl $44, %esp
++; X86-X87-NEXT:    addl $60, %esp
+ ; X86-X87-NEXT:    popl %esi
+ ; X86-X87-NEXT:    popl %edi
+ ; X86-X87-NEXT:    popl %ebx
+@@ -779,7 +779,7 @@
+ ; X86-SSE-NEXT:    pushl %ebx
+ ; X86-SSE-NEXT:    pushl %edi
+ ; X86-SSE-NEXT:    pushl %esi
+-; X86-SSE-NEXT:    subl $28, %esp
++; X86-SSE-NEXT:    subl $44, %esp
+ ; X86-SSE-NEXT:    movl {{[0-9]+}}(%esp), %esi
+ ; X86-SSE-NEXT:    movss {{.*#+}} xmm0 = mem[0],zero,zero,zero
+ ; X86-SSE-NEXT:    movss %xmm0, {{[0-9]+}}(%esp)
+@@ -819,7 +819,7 @@
+ ; X86-SSE-NEXT:    andl $15, %eax
+ ; X86-SSE-NEXT:    movb %al, 12(%esi)
+ ; X86-SSE-NEXT:    movl %esi, %eax
+-; X86-SSE-NEXT:    addl $28, %esp
++; X86-SSE-NEXT:    addl $44, %esp
+ ; X86-SSE-NEXT:    popl %esi
+ ; X86-SSE-NEXT:    popl %edi
+ ; X86-SSE-NEXT:    popl %ebx
+@@ -859,7 +859,7 @@
+ ; X86-X87-NEXT:    pushl %ebx
+ ; X86-X87-NEXT:    pushl %edi
+ ; X86-X87-NEXT:    pushl %esi
+-; X86-X87-NEXT:    subl $44, %esp
++; X86-X87-NEXT:    subl $60, %esp
+ ; X86-X87-NEXT:    flds {{[0-9]+}}(%esp)
+ ; X86-X87-NEXT:    fsts {{[0-9]+}}(%esp)
+ ; X86-X87-NEXT:    leal {{[0-9]+}}(%esp), %eax
+@@ -931,7 +931,7 @@
+ ; X86-X87-NEXT:    movl {{[-0-9]+}}(%e{{[sb]}}p), %eax # 4-byte Reload
+ ; X86-X87-NEXT:    movl %eax, (%ecx)
+ ; X86-X87-NEXT:    movl %ecx, %eax
+-; X86-X87-NEXT:    addl $44, %esp
++; X86-X87-NEXT:    addl $60, %esp
+ ; X86-X87-NEXT:    popl %esi
+ ; X86-X87-NEXT:    popl %edi
+ ; X86-X87-NEXT:    popl %ebx
+@@ -954,7 +954,7 @@
+ ; X86-SSE-NEXT:    pushl %ebx
+ ; X86-SSE-NEXT:    pushl %edi
+ ; X86-SSE-NEXT:    pushl %esi
+-; X86-SSE-NEXT:    subl $28, %esp
++; X86-SSE-NEXT:    subl $44, %esp
+ ; X86-SSE-NEXT:    movl {{[0-9]+}}(%esp), %esi
+ ; X86-SSE-NEXT:    movss {{.*#+}} xmm0 = mem[0],zero,zero,zero
+ ; X86-SSE-NEXT:    movss %xmm0, {{[0-9]+}}(%esp)
+@@ -990,7 +990,7 @@
+ ; X86-SSE-NEXT:    movl %edx, 4(%esi)
+ ; X86-SSE-NEXT:    movl %eax, (%esi)
+ ; X86-SSE-NEXT:    movl %esi, %eax
+-; X86-SSE-NEXT:    addl $28, %esp
++; X86-SSE-NEXT:    addl $44, %esp
+ ; X86-SSE-NEXT:    popl %esi
+ ; X86-SSE-NEXT:    popl %edi
+ ; X86-SSE-NEXT:    popl %ebx
+@@ -2882,7 +2882,7 @@
+ ; X86-X87-NEXT:    pushl %ebx
+ ; X86-X87-NEXT:    pushl %edi
+ ; X86-X87-NEXT:    pushl %esi
+-; X86-X87-NEXT:    subl $44, %esp
++; X86-X87-NEXT:    subl $60, %esp
+ ; X86-X87-NEXT:    movzwl {{[0-9]+}}(%esp), %eax
+ ; X86-X87-NEXT:    movl %eax, (%esp)
+ ; X86-X87-NEXT:    calll __gnu_h2f_ieee
+@@ -2960,7 +2960,7 @@
+ ; X86-X87-NEXT:    andl $15, %edx
+ ; X86-X87-NEXT:    movb %dl, 12(%ecx)
+ ; X86-X87-NEXT:    movl %ecx, %eax
+-; X86-X87-NEXT:    addl $44, %esp
++; X86-X87-NEXT:    addl $60, %esp
+ ; X86-X87-NEXT:    popl %esi
+ ; X86-X87-NEXT:    popl %edi
+ ; X86-X87-NEXT:    popl %ebx
+@@ -3061,7 +3061,7 @@
+ ; X86-X87-NEXT:    pushl %ebx
+ ; X86-X87-NEXT:    pushl %edi
+ ; X86-X87-NEXT:    pushl %esi
+-; X86-X87-NEXT:    subl $44, %esp
++; X86-X87-NEXT:    subl $60, %esp
+ ; X86-X87-NEXT:    movzwl {{[0-9]+}}(%esp), %eax
+ ; X86-X87-NEXT:    movl %eax, (%esp)
+ ; X86-X87-NEXT:    calll __gnu_h2f_ieee
+@@ -3135,7 +3135,7 @@
+ ; X86-X87-NEXT:    movl {{[-0-9]+}}(%e{{[sb]}}p), %eax # 4-byte Reload
+ ; X86-X87-NEXT:    movl %eax, (%ecx)
+ ; X86-X87-NEXT:    movl %ecx, %eax
+-; X86-X87-NEXT:    addl $44, %esp
++; X86-X87-NEXT:    addl $60, %esp
+ ; X86-X87-NEXT:    popl %esi
+ ; X86-X87-NEXT:    popl %edi
+ ; X86-X87-NEXT:    popl %ebx
+diff --git a/llvm/test/CodeGen/X86/fptoui-sat-scalar.ll b/llvm/test/CodeGen/X86/fptoui-sat-scalar.ll
+--- a/llvm/test/CodeGen/X86/fptoui-sat-scalar.ll
++++ b/llvm/test/CodeGen/X86/fptoui-sat-scalar.ll
+@@ -807,7 +807,7 @@
+ ; X86-X87-NEXT:    pushl %ebx
+ ; X86-X87-NEXT:    pushl %edi
+ ; X86-X87-NEXT:    pushl %esi
+-; X86-X87-NEXT:    subl $44, %esp
++; X86-X87-NEXT:    subl $60, %esp
+ ; X86-X87-NEXT:    flds {{[0-9]+}}(%esp)
+ ; X86-X87-NEXT:    fsts {{[0-9]+}}(%esp)
+ ; X86-X87-NEXT:    leal {{[0-9]+}}(%esp), %eax
+@@ -864,7 +864,7 @@
+ ; X86-X87-NEXT:    movl %ebp, 4(%ecx)
+ ; X86-X87-NEXT:    movl %eax, (%ecx)
+ ; X86-X87-NEXT:    movl %ecx, %eax
+-; X86-X87-NEXT:    addl $44, %esp
++; X86-X87-NEXT:    addl $60, %esp
+ ; X86-X87-NEXT:    popl %esi
+ ; X86-X87-NEXT:    popl %edi
+ ; X86-X87-NEXT:    popl %ebx
+@@ -2818,7 +2818,7 @@
+ ; X86-X87-NEXT:    pushl %ebx
+ ; X86-X87-NEXT:    pushl %edi
+ ; X86-X87-NEXT:    pushl %esi
+-; X86-X87-NEXT:    subl $44, %esp
++; X86-X87-NEXT:    subl $60, %esp
+ ; X86-X87-NEXT:    movzwl {{[0-9]+}}(%esp), %eax
+ ; X86-X87-NEXT:    movl %eax, (%esp)
+ ; X86-X87-NEXT:    calll __gnu_h2f_ieee
+@@ -2877,7 +2877,7 @@
+ ; X86-X87-NEXT:    movl %ebp, 4(%ecx)
+ ; X86-X87-NEXT:    movl %eax, (%ecx)
+ ; X86-X87-NEXT:    movl %ecx, %eax
+-; X86-X87-NEXT:    addl $44, %esp
++; X86-X87-NEXT:    addl $60, %esp
+ ; X86-X87-NEXT:    popl %esi
+ ; X86-X87-NEXT:    popl %edi
+ ; X86-X87-NEXT:    popl %ebx
+diff --git a/llvm/test/CodeGen/X86/implicit-null-check.ll b/llvm/test/CodeGen/X86/implicit-null-check.ll
+--- a/llvm/test/CodeGen/X86/implicit-null-check.ll
++++ b/llvm/test/CodeGen/X86/implicit-null-check.ll
+@@ -128,19 +128,15 @@
+ ; CHECK:       ## %bb.0: ## %entry
+ ; CHECK-NEXT:    movq %rdi, %rax
+ ; CHECK-NEXT:  Ltmp3:
+-; CHECK-NEXT:    movq (%rsi), %rcx ## on-fault: LBB5_1
++; CHECK-NEXT:    movaps (%rsi), %xmm0 ## on-fault: LBB5_1
+ ; CHECK-NEXT:  ## %bb.2: ## %not_null
+-; CHECK-NEXT:    movq 8(%rsi), %rdx
+-; CHECK-NEXT:    movq 16(%rsi), %rdi
+-; CHECK-NEXT:    movq 24(%rsi), %rsi
+-; CHECK-NEXT:    movq %rsi, 24(%rax)
+-; CHECK-NEXT:    movq %rdi, 16(%rax)
+-; CHECK-NEXT:    movq %rdx, 8(%rax)
+-; CHECK-NEXT:    movq %rcx, (%rax)
++; CHECK-NEXT:    movaps 16(%rsi), %xmm1
++; CHECK-NEXT:    movaps %xmm1, 16(%rax)
++; CHECK-NEXT:    movaps %xmm0, (%rax)
+ ; CHECK-NEXT:    retq
+ ; CHECK-NEXT:  LBB5_1: ## %is_null
+-; CHECK-NEXT:    movq $0, 24(%rax)
+-; CHECK-NEXT:    movq $0, 16(%rax)
++; CHECK-NEXT:    xorps %xmm0, %xmm0
++; CHECK-NEXT:    movaps %xmm0, 16(%rax)
+ ; CHECK-NEXT:    movq $0, 8(%rax)
+ ; CHECK-NEXT:    movq $42, (%rax)
+ ; CHECK-NEXT:    retq
+@@ -622,7 +618,8 @@
+ define i64 @imp_null_check_load_shift_add_addr(ptr %x) {
+ ; CHECK-LABEL: imp_null_check_load_shift_add_addr:
+ ; CHECK:       ## %bb.0: ## %entry
+-; CHECK:         movq 3526(,%rdi,8), %rax ## on-fault: LBB23_1
++; CHECK-NEXT:  Ltmp19:
++; CHECK-NEXT:    movq 3526(,%rdi,8), %rax ## on-fault: LBB23_1
+ ; CHECK-NEXT:  ## %bb.2: ## %not_null
+ ; CHECK-NEXT:    retq
+ ; CHECK-NEXT:  LBB23_1: ## %is_null
+diff --git a/llvm/test/CodeGen/X86/osx-private-labels.ll b/llvm/test/CodeGen/X86/osx-private-labels.ll
+--- a/llvm/test/CodeGen/X86/osx-private-labels.ll
++++ b/llvm/test/CodeGen/X86/osx-private-labels.ll
+@@ -36,7 +36,7 @@
+ 
+ @private6 = private unnamed_addr constant i128 42
+ ; CHECK: .section	__TEXT,__literal16,16byte_literals
+-; CHECK-NEXT: .p2align	3
++; CHECK-NEXT: .p2align	4
+ ; CHECK-NEXT: L_private6:
+ 
+ %struct._objc_class = type { ptr }
+diff --git a/llvm/test/CodeGen/X86/scheduler-backtracking.ll b/llvm/test/CodeGen/X86/scheduler-backtracking.ll
+--- a/llvm/test/CodeGen/X86/scheduler-backtracking.ll
++++ b/llvm/test/CodeGen/X86/scheduler-backtracking.ll
+@@ -218,6 +218,8 @@
+ ; ILP-LABEL: test2:
+ ; ILP:       # %bb.0:
+ ; ILP-NEXT:    movq %rdi, %rax
++; ILP-NEXT:    xorps %xmm0, %xmm0
++; ILP-NEXT:    movaps %xmm0, 16(%rdi)
+ ; ILP-NEXT:    xorl %edi, %edi
+ ; ILP-NEXT:    movq %rsi, %r11
+ ; ILP-NEXT:    negq %r11
+@@ -250,14 +252,14 @@
+ ; ILP-NEXT:    orq %rdi, %r9
+ ; ILP-NEXT:    cmovneq %rcx, %r8
+ ; ILP-NEXT:    movq %r8, (%rax)
+-; ILP-NEXT:    movq $0, 24(%rax)
+-; ILP-NEXT:    movq $0, 16(%rax)
+ ; ILP-NEXT:    movq $0, 8(%rax)
+ ; ILP-NEXT:    retq
+ ;
+ ; HYBRID-LABEL: test2:
+ ; HYBRID:       # %bb.0:
+ ; HYBRID-NEXT:    movq %rdi, %rax
++; HYBRID-NEXT:    xorps %xmm0, %xmm0
++; HYBRID-NEXT:    movaps %xmm0, 16(%rdi)
+ ; HYBRID-NEXT:    xorl %edi, %edi
+ ; HYBRID-NEXT:    movq %rsi, %r11
+ ; HYBRID-NEXT:    negq %r11
+@@ -290,14 +292,14 @@
+ ; HYBRID-NEXT:    orq %rdi, %r9
+ ; HYBRID-NEXT:    cmovneq %rcx, %r8
+ ; HYBRID-NEXT:    movq %r8, (%rax)
+-; HYBRID-NEXT:    movq $0, 24(%rax)
+-; HYBRID-NEXT:    movq $0, 16(%rax)
+ ; HYBRID-NEXT:    movq $0, 8(%rax)
+ ; HYBRID-NEXT:    retq
+ ;
+ ; BURR-LABEL: test2:
+ ; BURR:       # %bb.0:
+ ; BURR-NEXT:    movq %rdi, %rax
++; BURR-NEXT:    xorps %xmm0, %xmm0
++; BURR-NEXT:    movaps %xmm0, 16(%rdi)
+ ; BURR-NEXT:    xorl %edi, %edi
+ ; BURR-NEXT:    movq %rsi, %r11
+ ; BURR-NEXT:    negq %r11
+@@ -330,8 +332,6 @@
+ ; BURR-NEXT:    orq %rdi, %r9
+ ; BURR-NEXT:    cmovneq %rcx, %r8
+ ; BURR-NEXT:    movq %r8, (%rax)
+-; BURR-NEXT:    movq $0, 24(%rax)
+-; BURR-NEXT:    movq $0, 16(%rax)
+ ; BURR-NEXT:    movq $0, 8(%rax)
+ ; BURR-NEXT:    retq
+ ;
+@@ -369,15 +369,17 @@
+ ; SRC-NEXT:    subq $-128, %r8
+ ; SRC-NEXT:    orq %r9, %rdi
+ ; SRC-NEXT:    cmovneq %rdx, %r8
++; SRC-NEXT:    xorps %xmm0, %xmm0
++; SRC-NEXT:    movaps %xmm0, 16(%rax)
+ ; SRC-NEXT:    movq %r8, (%rax)
+-; SRC-NEXT:    movq $0, 24(%rax)
+-; SRC-NEXT:    movq $0, 16(%rax)
+ ; SRC-NEXT:    movq $0, 8(%rax)
+ ; SRC-NEXT:    retq
+ ;
+ ; LIN-LABEL: test2:
+ ; LIN:       # %bb.0:
+ ; LIN-NEXT:    movq %rdi, %rax
++; LIN-NEXT:    xorps %xmm0, %xmm0
++; LIN-NEXT:    movaps %xmm0, 16(%rdi)
+ ; LIN-NEXT:    movq %rsi, %rdi
+ ; LIN-NEXT:    negq %rdi
+ ; LIN-NEXT:    andq %rsi, %rdi
+@@ -411,8 +413,6 @@
+ ; LIN-NEXT:    cmoveq %rdx, %r8
+ ; LIN-NEXT:    movq %r8, (%rax)
+ ; LIN-NEXT:    movq $0, 8(%rax)
+-; LIN-NEXT:    movq $0, 16(%rax)
+-; LIN-NEXT:    movq $0, 24(%rax)
+ ; LIN-NEXT:    retq
+   %b = sub i256 0, %a
+   %c = and i256 %b, %a
+@@ -425,6 +425,8 @@
+ ; ILP:       # %bb.0:
+ ; ILP-NEXT:    pushq %rbx
+ ; ILP-NEXT:    movq %rdi, %rax
++; ILP-NEXT:    xorps %xmm0, %xmm0
++; ILP-NEXT:    movaps %xmm0, 16(%rdi)
+ ; ILP-NEXT:    xorl %r9d, %r9d
+ ; ILP-NEXT:    movq %rsi, %rdi
+ ; ILP-NEXT:    negq %rdi
+@@ -439,13 +441,13 @@
+ ; ILP-NEXT:    notq %rdx
+ ; ILP-NEXT:    andq %r10, %rdx
+ ; ILP-NEXT:    bsrq %rdx, %r9
+-; ILP-NEXT:    notq %rsi
+ ; ILP-NEXT:    xorq $63, %rbx
+ ; ILP-NEXT:    notq %rcx
+ ; ILP-NEXT:    andq %r11, %rcx
+ ; ILP-NEXT:    bsrq %rcx, %r10
+ ; ILP-NEXT:    xorq $63, %r10
+ ; ILP-NEXT:    addq $64, %r10
++; ILP-NEXT:    notq %rsi
+ ; ILP-NEXT:    testq %r8, %r8
+ ; ILP-NEXT:    cmovneq %rbx, %r10
+ ; ILP-NEXT:    xorq $63, %r9
+@@ -461,8 +463,6 @@
+ ; ILP-NEXT:    orq %r8, %rcx
+ ; ILP-NEXT:    cmovneq %r10, %rsi
+ ; ILP-NEXT:    movq %rsi, (%rax)
+-; ILP-NEXT:    movq $0, 24(%rax)
+-; ILP-NEXT:    movq $0, 16(%rax)
+ ; ILP-NEXT:    movq $0, 8(%rax)
+ ; ILP-NEXT:    popq %rbx
+ ; ILP-NEXT:    retq
+@@ -471,6 +471,8 @@
+ ; HYBRID:       # %bb.0:
+ ; HYBRID-NEXT:    pushq %rbx
+ ; HYBRID-NEXT:    movq %rdi, %rax
++; HYBRID-NEXT:    xorps %xmm0, %xmm0
++; HYBRID-NEXT:    movaps %xmm0, 16(%rdi)
+ ; HYBRID-NEXT:    xorl %r9d, %r9d
+ ; HYBRID-NEXT:    movq %rsi, %rdi
+ ; HYBRID-NEXT:    negq %rdi
+@@ -507,8 +509,6 @@
+ ; HYBRID-NEXT:    orq %r8, %rcx
+ ; HYBRID-NEXT:    cmovneq %r9, %rsi
+ ; HYBRID-NEXT:    movq %rsi, (%rax)
+-; HYBRID-NEXT:    movq $0, 24(%rax)
+-; HYBRID-NEXT:    movq $0, 16(%rax)
+ ; HYBRID-NEXT:    movq $0, 8(%rax)
+ ; HYBRID-NEXT:    popq %rbx
+ ; HYBRID-NEXT:    retq
+@@ -517,6 +517,8 @@
+ ; BURR:       # %bb.0:
+ ; BURR-NEXT:    pushq %rbx
+ ; BURR-NEXT:    movq %rdi, %rax
++; BURR-NEXT:    xorps %xmm0, %xmm0
++; BURR-NEXT:    movaps %xmm0, 16(%rdi)
+ ; BURR-NEXT:    xorl %r9d, %r9d
+ ; BURR-NEXT:    movq %rsi, %rdi
+ ; BURR-NEXT:    negq %rdi
+@@ -553,8 +555,6 @@
+ ; BURR-NEXT:    orq %r8, %rcx
+ ; BURR-NEXT:    cmovneq %r9, %rsi
+ ; BURR-NEXT:    movq %rsi, (%rax)
+-; BURR-NEXT:    movq $0, 24(%rax)
+-; BURR-NEXT:    movq $0, 16(%rax)
+ ; BURR-NEXT:    movq $0, 8(%rax)
+ ; BURR-NEXT:    popq %rbx
+ ; BURR-NEXT:    retq
+@@ -597,15 +597,17 @@
+ ; SRC-NEXT:    subq $-128, %r10
+ ; SRC-NEXT:    orq %rcx, %r8
+ ; SRC-NEXT:    cmovneq %r9, %r10
++; SRC-NEXT:    xorps %xmm0, %xmm0
++; SRC-NEXT:    movaps %xmm0, 16(%rax)
+ ; SRC-NEXT:    movq %r10, (%rax)
+-; SRC-NEXT:    movq $0, 24(%rax)
+-; SRC-NEXT:    movq $0, 16(%rax)
+ ; SRC-NEXT:    movq $0, 8(%rax)
+ ; SRC-NEXT:    retq
+ ;
+ ; LIN-LABEL: test3:
+ ; LIN:       # %bb.0:
+ ; LIN-NEXT:    movq %rdi, %rax
++; LIN-NEXT:    xorps %xmm0, %xmm0
++; LIN-NEXT:    movaps %xmm0, 16(%rdi)
+ ; LIN-NEXT:    movq %rsi, %rdi
+ ; LIN-NEXT:    negq %rdi
+ ; LIN-NEXT:    notq %rsi
+@@ -643,8 +645,6 @@
+ ; LIN-NEXT:    cmoveq %rsi, %rdi
+ ; LIN-NEXT:    movq %rdi, (%rax)
+ ; LIN-NEXT:    movq $0, 8(%rax)
+-; LIN-NEXT:    movq $0, 16(%rax)
+-; LIN-NEXT:    movq $0, 24(%rax)
+ ; LIN-NEXT:    retq
+   %m = sub i256 -1, %n
+   %x = sub i256 0, %n
+diff --git a/llvm/test/CodeGen/X86/sdiv_fix.ll b/llvm/test/CodeGen/X86/sdiv_fix.ll
+--- a/llvm/test/CodeGen/X86/sdiv_fix.ll
++++ b/llvm/test/CodeGen/X86/sdiv_fix.ll
+@@ -306,8 +306,8 @@
+ ; X86-NEXT:    pushl %ebx
+ ; X86-NEXT:    pushl %edi
+ ; X86-NEXT:    pushl %esi
+-; X86-NEXT:    andl $-8, %esp
+-; X86-NEXT:    subl $72, %esp
++; X86-NEXT:    andl $-16, %esp
++; X86-NEXT:    subl $80, %esp
+ ; X86-NEXT:    movl 8(%ebp), %ecx
+ ; X86-NEXT:    movl 12(%ebp), %eax
+ ; X86-NEXT:    movl 20(%ebp), %edx
+diff --git a/llvm/test/CodeGen/X86/sdiv_fix_sat.ll b/llvm/test/CodeGen/X86/sdiv_fix_sat.ll
+--- a/llvm/test/CodeGen/X86/sdiv_fix_sat.ll
++++ b/llvm/test/CodeGen/X86/sdiv_fix_sat.ll
+@@ -369,8 +369,8 @@
+ ; X86-NEXT:    pushl %ebx
+ ; X86-NEXT:    pushl %edi
+ ; X86-NEXT:    pushl %esi
+-; X86-NEXT:    andl $-8, %esp
+-; X86-NEXT:    subl $88, %esp
++; X86-NEXT:    andl $-16, %esp
++; X86-NEXT:    subl $96, %esp
+ ; X86-NEXT:    movl 8(%ebp), %ecx
+ ; X86-NEXT:    movl 12(%ebp), %eax
+ ; X86-NEXT:    movl 20(%ebp), %edi
+@@ -803,8 +803,8 @@
+ ; X86-NEXT:    pushl %ebx
+ ; X86-NEXT:    pushl %edi
+ ; X86-NEXT:    pushl %esi
+-; X86-NEXT:    andl $-8, %esp
+-; X86-NEXT:    subl $192, %esp
++; X86-NEXT:    andl $-16, %esp
++; X86-NEXT:    subl $208, %esp
+ ; X86-NEXT:    movl 36(%ebp), %esi
+ ; X86-NEXT:    movl 16(%ebp), %ebx
+ ; X86-NEXT:    movl 32(%ebp), %eax
+diff --git a/llvm/test/CodeGen/X86/setcc-wide-types.ll b/llvm/test/CodeGen/X86/setcc-wide-types.ll
+--- a/llvm/test/CodeGen/X86/setcc-wide-types.ll
++++ b/llvm/test/CodeGen/X86/setcc-wide-types.ll
+@@ -774,13 +774,11 @@
+ define i32 @ne_i128_pair(ptr %a, ptr %b) {
+ ; SSE2-LABEL: ne_i128_pair:
+ ; SSE2:       # %bb.0:
+-; SSE2-NEXT:    movdqu (%rdi), %xmm0
+-; SSE2-NEXT:    movdqu 16(%rdi), %xmm1
+-; SSE2-NEXT:    movdqu (%rsi), %xmm2
+-; SSE2-NEXT:    pcmpeqb %xmm0, %xmm2
+-; SSE2-NEXT:    movdqu 16(%rsi), %xmm0
+-; SSE2-NEXT:    pcmpeqb %xmm1, %xmm0
+-; SSE2-NEXT:    pand %xmm2, %xmm0
++; SSE2-NEXT:    movdqa (%rdi), %xmm0
++; SSE2-NEXT:    movdqa 16(%rdi), %xmm1
++; SSE2-NEXT:    pcmpeqb 16(%rsi), %xmm1
++; SSE2-NEXT:    pcmpeqb (%rsi), %xmm0
++; SSE2-NEXT:    pand %xmm1, %xmm0
+ ; SSE2-NEXT:    pmovmskb %xmm0, %ecx
+ ; SSE2-NEXT:    xorl %eax, %eax
+ ; SSE2-NEXT:    cmpl $65535, %ecx # imm = 0xFFFF
+@@ -789,13 +787,11 @@
+ ;
+ ; SSE41-LABEL: ne_i128_pair:
+ ; SSE41:       # %bb.0:
+-; SSE41-NEXT:    movdqu (%rdi), %xmm0
+-; SSE41-NEXT:    movdqu 16(%rdi), %xmm1
+-; SSE41-NEXT:    movdqu (%rsi), %xmm2
+-; SSE41-NEXT:    pxor %xmm0, %xmm2
+-; SSE41-NEXT:    movdqu 16(%rsi), %xmm0
+-; SSE41-NEXT:    pxor %xmm1, %xmm0
+-; SSE41-NEXT:    por %xmm2, %xmm0
++; SSE41-NEXT:    movdqa (%rdi), %xmm0
++; SSE41-NEXT:    movdqa 16(%rdi), %xmm1
++; SSE41-NEXT:    pxor 16(%rsi), %xmm1
++; SSE41-NEXT:    pxor (%rsi), %xmm0
++; SSE41-NEXT:    por %xmm1, %xmm0
+ ; SSE41-NEXT:    xorl %eax, %eax
+ ; SSE41-NEXT:    ptest %xmm0, %xmm0
+ ; SSE41-NEXT:    setne %al
+@@ -803,8 +799,8 @@
+ ;
+ ; AVXANY-LABEL: ne_i128_pair:
+ ; AVXANY:       # %bb.0:
+-; AVXANY-NEXT:    vmovdqu (%rdi), %xmm0
+-; AVXANY-NEXT:    vmovdqu 16(%rdi), %xmm1
++; AVXANY-NEXT:    vmovdqa (%rdi), %xmm0
++; AVXANY-NEXT:    vmovdqa 16(%rdi), %xmm1
+ ; AVXANY-NEXT:    vpxor 16(%rsi), %xmm1, %xmm1
+ ; AVXANY-NEXT:    vpxor (%rsi), %xmm0, %xmm0
+ ; AVXANY-NEXT:    vpor %xmm1, %xmm0, %xmm0
+@@ -832,13 +828,11 @@
+ define i32 @eq_i128_pair(ptr %a, ptr %b) {
+ ; SSE2-LABEL: eq_i128_pair:
+ ; SSE2:       # %bb.0:
+-; SSE2-NEXT:    movdqu (%rdi), %xmm0
+-; SSE2-NEXT:    movdqu 16(%rdi), %xmm1
+-; SSE2-NEXT:    movdqu (%rsi), %xmm2
+-; SSE2-NEXT:    pcmpeqb %xmm0, %xmm2
+-; SSE2-NEXT:    movdqu 16(%rsi), %xmm0
+-; SSE2-NEXT:    pcmpeqb %xmm1, %xmm0
+-; SSE2-NEXT:    pand %xmm2, %xmm0
++; SSE2-NEXT:    movdqa (%rdi), %xmm0
++; SSE2-NEXT:    movdqa 16(%rdi), %xmm1
++; SSE2-NEXT:    pcmpeqb 16(%rsi), %xmm1
++; SSE2-NEXT:    pcmpeqb (%rsi), %xmm0
++; SSE2-NEXT:    pand %xmm1, %xmm0
+ ; SSE2-NEXT:    pmovmskb %xmm0, %ecx
+ ; SSE2-NEXT:    xorl %eax, %eax
+ ; SSE2-NEXT:    cmpl $65535, %ecx # imm = 0xFFFF
+@@ -847,13 +841,11 @@
+ ;
+ ; SSE41-LABEL: eq_i128_pair:
+ ; SSE41:       # %bb.0:
+-; SSE41-NEXT:    movdqu (%rdi), %xmm0
+-; SSE41-NEXT:    movdqu 16(%rdi), %xmm1
+-; SSE41-NEXT:    movdqu (%rsi), %xmm2
+-; SSE41-NEXT:    pxor %xmm0, %xmm2
+-; SSE41-NEXT:    movdqu 16(%rsi), %xmm0
+-; SSE41-NEXT:    pxor %xmm1, %xmm0
+-; SSE41-NEXT:    por %xmm2, %xmm0
++; SSE41-NEXT:    movdqa (%rdi), %xmm0
++; SSE41-NEXT:    movdqa 16(%rdi), %xmm1
++; SSE41-NEXT:    pxor 16(%rsi), %xmm1
++; SSE41-NEXT:    pxor (%rsi), %xmm0
++; SSE41-NEXT:    por %xmm1, %xmm0
+ ; SSE41-NEXT:    xorl %eax, %eax
+ ; SSE41-NEXT:    ptest %xmm0, %xmm0
+ ; SSE41-NEXT:    sete %al
+@@ -861,8 +853,8 @@
+ ;
+ ; AVXANY-LABEL: eq_i128_pair:
+ ; AVXANY:       # %bb.0:
+-; AVXANY-NEXT:    vmovdqu (%rdi), %xmm0
+-; AVXANY-NEXT:    vmovdqu 16(%rdi), %xmm1
++; AVXANY-NEXT:    vmovdqa (%rdi), %xmm0
++; AVXANY-NEXT:    vmovdqa 16(%rdi), %xmm1
+ ; AVXANY-NEXT:    vpxor 16(%rsi), %xmm1, %xmm1
+ ; AVXANY-NEXT:    vpxor (%rsi), %xmm0, %xmm0
+ ; AVXANY-NEXT:    vpor %xmm1, %xmm0, %xmm0
+diff --git a/llvm/test/CodeGen/X86/smul-with-overflow.ll b/llvm/test/CodeGen/X86/smul-with-overflow.ll
+--- a/llvm/test/CodeGen/X86/smul-with-overflow.ll
++++ b/llvm/test/CodeGen/X86/smul-with-overflow.ll
+@@ -812,7 +812,7 @@
+ ; X86-NEXT:    movl {{[-0-9]+}}(%e{{[sb]}}p), %edx # 4-byte Reload
+ ; X86-NEXT:    movl %edx, 12(%eax)
+ ; X86-NEXT:    movb %cl, 16(%eax)
+-; X86-NEXT:    setne 20(%eax)
++; X86-NEXT:    setne 32(%eax)
+ ; X86-NEXT:    addl $188, %esp
+ ; X86-NEXT:    popl %esi
+ ; X86-NEXT:    popl %edi
+@@ -999,7 +999,7 @@
+ ; X64-NEXT:    movq {{[-0-9]+}}(%r{{[sb]}}p), %rcx # 8-byte Reload
+ ; X64-NEXT:    movq %rcx, (%rax)
+ ; X64-NEXT:    movb %sil, 16(%rax)
+-; X64-NEXT:    setne 24(%rax)
++; X64-NEXT:    setne 32(%rax)
+ ; X64-NEXT:    popq %rbx
+ ; X64-NEXT:    popq %r12
+ ; X64-NEXT:    popq %r13
+diff --git a/llvm/test/CodeGen/X86/sret-implicit.ll b/llvm/test/CodeGen/X86/sret-implicit.ll
+--- a/llvm/test/CodeGen/X86/sret-implicit.ll
++++ b/llvm/test/CodeGen/X86/sret-implicit.ll
+@@ -25,7 +25,8 @@
+ 
+ ; X64-LABEL: sret_demoted
+ ; X64-DAG: movq %rdi, %rax
+-; X64-DAG: movq $0, (%rdi)
++; X64-DAG: xorps %xmm0, %xmm0
++; X64-DAG: movaps %xmm0, (%rdi)
+ ; X64: retq
+ 
+ ; X86-LABEL: sret_demoted
+diff --git a/llvm/test/CodeGen/X86/statepoint-deopt-lowering.ll b/llvm/test/CodeGen/X86/statepoint-deopt-lowering.ll
+--- a/llvm/test/CodeGen/X86/statepoint-deopt-lowering.ll
++++ b/llvm/test/CodeGen/X86/statepoint-deopt-lowering.ll
+@@ -43,35 +43,25 @@
+ ; CHECK:       # %bb.0:
+ ; CHECK-NEXT:    subq $248, %rsp
+ ; CHECK-NEXT:    .cfi_def_cfa_offset 256
+-; CHECK-NEXT:    movq $0, {{[0-9]+}}(%rsp)
+-; CHECK-NEXT:    movq $0, {{[0-9]+}}(%rsp)
+-; CHECK-NEXT:    movq $0, {{[0-9]+}}(%rsp)
+-; CHECK-NEXT:    movq $144, {{[0-9]+}}(%rsp)
++; CHECK-NEXT:    xorps %xmm0, %xmm0
++; CHECK-NEXT:    movaps %xmm0, {{[0-9]+}}(%rsp)
++; CHECK-NEXT:    movaps %xmm0, {{[0-9]+}}(%rsp)
++; CHECK-NEXT:    movaps %xmm0, {{[0-9]+}}(%rsp)
++; CHECK-NEXT:    movaps %xmm0, {{[0-9]+}}(%rsp)
++; CHECK-NEXT:    movaps %xmm0, {{[0-9]+}}(%rsp)
++; CHECK-NEXT:    movaps %xmm0, {{[0-9]+}}(%rsp)
++; CHECK-NEXT:    movaps %xmm0, {{[0-9]+}}(%rsp)
++; CHECK-NEXT:    movaps %xmm0, {{[0-9]+}}(%rsp)
++; CHECK-NEXT:    movaps %xmm0, {{[0-9]+}}(%rsp)
++; CHECK-NEXT:    movaps %xmm0, {{[0-9]+}}(%rsp)
++; CHECK-NEXT:    movaps %xmm0, {{[0-9]+}}(%rsp)
+ ; CHECK-NEXT:    movq $0, {{[0-9]+}}(%rsp)
+ ; CHECK-NEXT:    movq $144, {{[0-9]+}}(%rsp)
+ ; CHECK-NEXT:    movq $0, {{[0-9]+}}(%rsp)
+-; CHECK-NEXT:    movq $0, {{[0-9]+}}(%rsp)
+-; CHECK-NEXT:    movq $0, {{[0-9]+}}(%rsp)
+-; CHECK-NEXT:    movq $0, {{[0-9]+}}(%rsp)
+-; CHECK-NEXT:    movq $0, {{[0-9]+}}(%rsp)
+-; CHECK-NEXT:    movq $0, {{[0-9]+}}(%rsp)
++; CHECK-NEXT:    movq $144, (%rsp)
+ ; CHECK-NEXT:    movq $0, {{[0-9]+}}(%rsp)
+ ; CHECK-NEXT:    movq $144, {{[0-9]+}}(%rsp)
+ ; CHECK-NEXT:    movq $0, {{[0-9]+}}(%rsp)
+-; CHECK-NEXT:    movq $0, {{[0-9]+}}(%rsp)
+-; CHECK-NEXT:    movq $0, {{[0-9]+}}(%rsp)
+-; CHECK-NEXT:    movq $0, {{[0-9]+}}(%rsp)
+-; CHECK-NEXT:    movq $0, {{[0-9]+}}(%rsp)
+-; CHECK-NEXT:    movq $0, {{[0-9]+}}(%rsp)
+-; CHECK-NEXT:    movq $0, {{[0-9]+}}(%rsp)
+-; CHECK-NEXT:    movq $0, {{[0-9]+}}(%rsp)
+-; CHECK-NEXT:    movq $0, {{[0-9]+}}(%rsp)
+-; CHECK-NEXT:    movq $0, {{[0-9]+}}(%rsp)
+-; CHECK-NEXT:    movq $0, {{[0-9]+}}(%rsp)
+-; CHECK-NEXT:    movq $0, {{[0-9]+}}(%rsp)
+-; CHECK-NEXT:    movq $0, {{[0-9]+}}(%rsp)
+-; CHECK-NEXT:    movq $0, {{[0-9]+}}(%rsp)
+-; CHECK-NEXT:    movq $0, {{[0-9]+}}(%rsp)
+ ; CHECK-NEXT:    movq $144, {{[0-9]+}}(%rsp)
+ ; CHECK-NEXT:    callq foo@PLT
+ ; CHECK-NEXT:  .Ltmp2:
+@@ -89,60 +79,36 @@
+ ; CHECK:       # %bb.0:
+ ; CHECK-NEXT:    subq $248, %rsp
+ ; CHECK-NEXT:    .cfi_def_cfa_offset 256
++; CHECK-NEXT:    movaps {{[0-9]+}}(%rsp), %xmm0
++; CHECK-NEXT:    movaps {{[0-9]+}}(%rsp), %xmm1
++; CHECK-NEXT:    movaps {{[0-9]+}}(%rsp), %xmm2
++; CHECK-NEXT:    movaps {{[0-9]+}}(%rsp), %xmm3
++; CHECK-NEXT:    movaps {{[0-9]+}}(%rsp), %xmm4
++; CHECK-NEXT:    movaps {{[0-9]+}}(%rsp), %xmm5
++; CHECK-NEXT:    movaps {{[0-9]+}}(%rsp), %xmm6
++; CHECK-NEXT:    movaps {{[0-9]+}}(%rsp), %xmm7
++; CHECK-NEXT:    movaps {{[0-9]+}}(%rsp), %xmm8
++; CHECK-NEXT:    movaps {{[0-9]+}}(%rsp), %xmm9
++; CHECK-NEXT:    movaps {{[0-9]+}}(%rsp), %xmm10
++; CHECK-NEXT:    movaps {{[0-9]+}}(%rsp), %xmm11
+ ; CHECK-NEXT:    movq %r9, {{[0-9]+}}(%rsp)
+ ; CHECK-NEXT:    movq %r8, {{[0-9]+}}(%rsp)
+ ; CHECK-NEXT:    movq %rcx, {{[0-9]+}}(%rsp)
+ ; CHECK-NEXT:    movq %rdx, {{[0-9]+}}(%rsp)
+ ; CHECK-NEXT:    movq %rsi, {{[0-9]+}}(%rsp)
+-; CHECK-NEXT:    movq %rdi, {{[0-9]+}}(%rsp)
+-; CHECK-NEXT:    movq {{[0-9]+}}(%rsp), %rax
+-; CHECK-NEXT:    movq %rax, {{[0-9]+}}(%rsp)
+-; CHECK-NEXT:    movq {{[0-9]+}}(%rsp), %rax
+-; CHECK-NEXT:    movq %rax, {{[0-9]+}}(%rsp)
+-; CHECK-NEXT:    movq {{[0-9]+}}(%rsp), %rax
+-; CHECK-NEXT:    movq %rax, {{[0-9]+}}(%rsp)
+-; CHECK-NEXT:    movq {{[0-9]+}}(%rsp), %rax
+-; CHECK-NEXT:    movq %rax, {{[0-9]+}}(%rsp)
+-; CHECK-NEXT:    movq {{[0-9]+}}(%rsp), %rax
+-; CHECK-NEXT:    movq %rax, {{[0-9]+}}(%rsp)
+-; CHECK-NEXT:    movq {{[0-9]+}}(%rsp), %rax
+-; CHECK-NEXT:    movq %rax, {{[0-9]+}}(%rsp)
+-; CHECK-NEXT:    movq {{[0-9]+}}(%rsp), %rax
+-; CHECK-NEXT:    movq %rax, {{[0-9]+}}(%rsp)
+-; CHECK-NEXT:    movq {{[0-9]+}}(%rsp), %rax
+-; CHECK-NEXT:    movq %rax, {{[0-9]+}}(%rsp)
+-; CHECK-NEXT:    movq {{[0-9]+}}(%rsp), %rax
+-; CHECK-NEXT:    movq %rax, {{[0-9]+}}(%rsp)
+-; CHECK-NEXT:    movq {{[0-9]+}}(%rsp), %rax
+-; CHECK-NEXT:    movq %rax, {{[0-9]+}}(%rsp)
+-; CHECK-NEXT:    movq {{[0-9]+}}(%rsp), %rax
+-; CHECK-NEXT:    movq %rax, {{[0-9]+}}(%rsp)
+-; CHECK-NEXT:    movq {{[0-9]+}}(%rsp), %rax
+-; CHECK-NEXT:    movq %rax, {{[0-9]+}}(%rsp)
+-; CHECK-NEXT:    movq {{[0-9]+}}(%rsp), %rax
+-; CHECK-NEXT:    movq %rax, {{[0-9]+}}(%rsp)
+-; CHECK-NEXT:    movq {{[0-9]+}}(%rsp), %rax
+-; CHECK-NEXT:    movq %rax, {{[0-9]+}}(%rsp)
+-; CHECK-NEXT:    movq {{[0-9]+}}(%rsp), %rax
+-; CHECK-NEXT:    movq %rax, {{[0-9]+}}(%rsp)
+-; CHECK-NEXT:    movq {{[0-9]+}}(%rsp), %rax
+-; CHECK-NEXT:    movq %rax, {{[0-9]+}}(%rsp)
+-; CHECK-NEXT:    movq {{[0-9]+}}(%rsp), %rax
+-; CHECK-NEXT:    movq %rax, {{[0-9]+}}(%rsp)
+-; CHECK-NEXT:    movq {{[0-9]+}}(%rsp), %rax
+-; CHECK-NEXT:    movq %rax, {{[0-9]+}}(%rsp)
+-; CHECK-NEXT:    movq {{[0-9]+}}(%rsp), %rax
+-; CHECK-NEXT:    movq %rax, {{[0-9]+}}(%rsp)
+-; CHECK-NEXT:    movq {{[0-9]+}}(%rsp), %rax
+-; CHECK-NEXT:    movq %rax, {{[0-9]+}}(%rsp)
+-; CHECK-NEXT:    movq {{[0-9]+}}(%rsp), %rax
+-; CHECK-NEXT:    movq %rax, {{[0-9]+}}(%rsp)
+-; CHECK-NEXT:    movq {{[0-9]+}}(%rsp), %rax
+-; CHECK-NEXT:    movq %rax, {{[0-9]+}}(%rsp)
+-; CHECK-NEXT:    movq {{[0-9]+}}(%rsp), %rax
+-; CHECK-NEXT:    movq %rax, {{[0-9]+}}(%rsp)
+-; CHECK-NEXT:    movq {{[0-9]+}}(%rsp), %rax
+-; CHECK-NEXT:    movq %rax, {{[0-9]+}}(%rsp)
++; CHECK-NEXT:    movq %rdi, (%rsp)
++; CHECK-NEXT:    movaps %xmm11, {{[0-9]+}}(%rsp)
++; CHECK-NEXT:    movaps %xmm10, {{[0-9]+}}(%rsp)
++; CHECK-NEXT:    movaps %xmm9, {{[0-9]+}}(%rsp)
++; CHECK-NEXT:    movaps %xmm8, {{[0-9]+}}(%rsp)
++; CHECK-NEXT:    movaps %xmm7, {{[0-9]+}}(%rsp)
++; CHECK-NEXT:    movaps %xmm6, {{[0-9]+}}(%rsp)
++; CHECK-NEXT:    movaps %xmm5, {{[0-9]+}}(%rsp)
++; CHECK-NEXT:    movaps %xmm4, {{[0-9]+}}(%rsp)
++; CHECK-NEXT:    movaps %xmm3, {{[0-9]+}}(%rsp)
++; CHECK-NEXT:    movaps %xmm2, {{[0-9]+}}(%rsp)
++; CHECK-NEXT:    movaps %xmm1, {{[0-9]+}}(%rsp)
++; CHECK-NEXT:    movaps %xmm0, {{[0-9]+}}(%rsp)
+ ; CHECK-NEXT:    callq foo@PLT
+ ; CHECK-NEXT:  .Ltmp3:
+ ; CHECK-NEXT:    addq $248, %rsp
+diff --git a/llvm/test/CodeGen/X86/statepoint-vector.ll b/llvm/test/CodeGen/X86/statepoint-vector.ll
+--- a/llvm/test/CodeGen/X86/statepoint-vector.ll
++++ b/llvm/test/CodeGen/X86/statepoint-vector.ll
+@@ -122,9 +122,9 @@
+ ; CHECK-NEXT:    subq $40, %rsp
+ ; CHECK-NEXT:    .cfi_def_cfa_offset 48
+ ; CHECK-NEXT:    xorps %xmm0, %xmm0
+-; CHECK-NEXT:    movups %xmm0, {{[0-9]+}}(%rsp)
+-; CHECK-NEXT:    movq $-1, {{[0-9]+}}(%rsp)
++; CHECK-NEXT:    movaps %xmm0, {{[0-9]+}}(%rsp)
+ ; CHECK-NEXT:    movq $-1, {{[0-9]+}}(%rsp)
++; CHECK-NEXT:    movq $-1, (%rsp)
+ ; CHECK-NEXT:    callq do_safepoint@PLT
+ ; CHECK-NEXT:  .Ltmp4:
+ ; CHECK-NEXT:    addq $40, %rsp
+diff --git a/llvm/test/CodeGen/X86/udiv_fix.ll b/llvm/test/CodeGen/X86/udiv_fix.ll
+--- a/llvm/test/CodeGen/X86/udiv_fix.ll
++++ b/llvm/test/CodeGen/X86/udiv_fix.ll
+@@ -152,8 +152,8 @@
+ ; X86-NEXT:    pushl %ebp
+ ; X86-NEXT:    movl %esp, %ebp
+ ; X86-NEXT:    pushl %esi
+-; X86-NEXT:    andl $-8, %esp
+-; X86-NEXT:    subl $24, %esp
++; X86-NEXT:    andl $-16, %esp
++; X86-NEXT:    subl $32, %esp
+ ; X86-NEXT:    movl 8(%ebp), %eax
+ ; X86-NEXT:    movl 12(%ebp), %ecx
+ ; X86-NEXT:    movl %ecx, %edx
+diff --git a/llvm/test/CodeGen/X86/udiv_fix_sat.ll b/llvm/test/CodeGen/X86/udiv_fix_sat.ll
+--- a/llvm/test/CodeGen/X86/udiv_fix_sat.ll
++++ b/llvm/test/CodeGen/X86/udiv_fix_sat.ll
+@@ -193,8 +193,8 @@
+ ; X86-NEXT:    pushl %ebp
+ ; X86-NEXT:    movl %esp, %ebp
+ ; X86-NEXT:    pushl %esi
+-; X86-NEXT:    andl $-8, %esp
+-; X86-NEXT:    subl $24, %esp
++; X86-NEXT:    andl $-16, %esp
++; X86-NEXT:    subl $32, %esp
+ ; X86-NEXT:    movl 8(%ebp), %eax
+ ; X86-NEXT:    movl 12(%ebp), %ecx
+ ; X86-NEXT:    movl %ecx, %edx
+diff --git a/llvm/test/tools/llvm-lto2/X86/pipeline.ll b/llvm/test/tools/llvm-lto2/X86/pipeline.ll
+--- a/llvm/test/tools/llvm-lto2/X86/pipeline.ll
++++ b/llvm/test/tools/llvm-lto2/X86/pipeline.ll
+@@ -15,7 +15,7 @@
+ ; is accepted).
+ ; RUN: llvm-lto2 run %t1.bc -o %t.o -r %t1.bc,patatino,px
+ 
+-target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
++target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128"
+ target triple = "x86_64-unknown-linux-gnu"
+ 
+ define void @patatino() {
+diff --git a/llvm/test/tools/llvm-lto2/X86/slp-vectorize-pm.ll b/llvm/test/tools/llvm-lto2/X86/slp-vectorize-pm.ll
+--- a/llvm/test/tools/llvm-lto2/X86/slp-vectorize-pm.ll
++++ b/llvm/test/tools/llvm-lto2/X86/slp-vectorize-pm.ll
+@@ -26,7 +26,7 @@
+ ; CHECK-O2-LPV: = !{!"llvm.loop.isvectorized", i32 1}
+ ; CHECK-O3-LPV: = !{!"llvm.loop.isvectorized", i32 1}
+ 
+-target datalayout = "e-m:e-i64:64-f80:128-n8:16:32:64-S128"
++target datalayout = "e-m:e-i64:64-i128:128-f80:128-n8:16:32:64-S128"
+ target triple = "x86_64-unknown-linux-gnu"
+ 
+ define i32 @foo(ptr %a) {
+diff --git a/llvm/test/tools/llvm-lto2/X86/stats-file-option.ll b/llvm/test/tools/llvm-lto2/X86/stats-file-option.ll
+--- a/llvm/test/tools/llvm-lto2/X86/stats-file-option.ll
++++ b/llvm/test/tools/llvm-lto2/X86/stats-file-option.ll
+@@ -6,7 +6,7 @@
+ ; RUN: llvm-lto2 run %t1.bc -o %t.o -r %t1.bc,patatino,px -stats-file=%t2.stats
+ ; RUN: FileCheck --input-file=%t2.stats %s
+ 
+-target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
++target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128"
+ target triple = "x86_64-unknown-linux-gnu"
+ 
+ define void @patatino() {
+diff --git a/llvm/unittests/Bitcode/DataLayoutUpgradeTest.cpp b/llvm/unittests/Bitcode/DataLayoutUpgradeTest.cpp
+--- a/llvm/unittests/Bitcode/DataLayoutUpgradeTest.cpp
++++ b/llvm/unittests/Bitcode/DataLayoutUpgradeTest.cpp
+@@ -19,12 +19,14 @@
+                               "x86_64-unknown-linux-gnu");
+   std::string DL2 = UpgradeDataLayoutString(
+       "e-m:w-p:32:32-i64:64-f80:32-n8:16:32-S32", "i686-pc-windows-msvc");
+-  std::string DL3 = UpgradeDataLayoutString("e-m:o-i64:64-i128:128-n32:64-S128",
++  std::string DL3 = UpgradeDataLayoutString("e-m:o-i64:64-n32:64-S128",
+                                             "x86_64-apple-macosx");
+-  EXPECT_EQ(DL1, "e-m:e-p:32:32-p270:32:32-p271:32:32-p272:64:64-i64:64"
+-                 "-f80:128-n8:16:32:64-S128");
+-  EXPECT_EQ(DL2, "e-m:w-p:32:32-p270:32:32-p271:32:32-p272:64:64-i64:64"
+-                 "-f80:128-n8:16:32-S32");
++  EXPECT_EQ(DL1,
++            "e-m:e-p:32:32-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128"
++            "-f80:128-n8:16:32:64-S128");
++  EXPECT_EQ(DL2,
++            "e-m:w-p:32:32-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128"
++            "-f80:128-n8:16:32-S32");
+   EXPECT_EQ(DL3, "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128"
+                  "-n32:64-S128");
+ 
+diff --git a/llvm/unittests/CodeGen/InstrRefLDVTest.cpp b/llvm/unittests/CodeGen/InstrRefLDVTest.cpp
+--- a/llvm/unittests/CodeGen/InstrRefLDVTest.cpp
++++ b/llvm/unittests/CodeGen/InstrRefLDVTest.cpp
+@@ -70,8 +70,8 @@
+   void SetUp() {
+     // Boilerplate that creates a MachineFunction and associated blocks.
+ 
+-    Mod->setDataLayout("e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-"
+-                       "n8:16:32:64-S128");
++    Mod->setDataLayout("e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-"
++                       "f80:128-n8:16:32:64-S128");
+     Triple TargetTriple("x86_64--");
+     std::string Error;
+     const Target *T = TargetRegistry::lookupTarget("", TargetTriple, Error);
+@@ -475,8 +475,8 @@
+     auto MIRParse = createMIRParser(std::move(MemBuf), Ctx);
+     Mod = MIRParse->parseIRModule();
+     assert(Mod);
+-    Mod->setDataLayout("e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-"
+-                       "n8:16:32:64-S128");
++    Mod->setDataLayout("e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-"
++                       "f80:128-n8:16:32:64-S128");
+ 
+     bool Result = MIRParse->parseMachineFunctions(*Mod, *MMI);
+     assert(!Result && "Failed to parse unit test machine function?");
+

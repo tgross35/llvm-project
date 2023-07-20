@@ -620,13 +620,11 @@ define i32 @eq_i512(<8 x i64> %x, <8 x i64> %y) {
 define i32 @ne_i128_pair(ptr %a, ptr %b) {
 ; SSE2-LABEL: ne_i128_pair:
 ; SSE2:       # %bb.0:
-; SSE2-NEXT:    movdqu (%rdi), %xmm0
-; SSE2-NEXT:    movdqu 16(%rdi), %xmm1
-; SSE2-NEXT:    movdqu (%rsi), %xmm2
-; SSE2-NEXT:    pcmpeqb %xmm0, %xmm2
-; SSE2-NEXT:    movdqu 16(%rsi), %xmm0
-; SSE2-NEXT:    pcmpeqb %xmm1, %xmm0
-; SSE2-NEXT:    pand %xmm2, %xmm0
+; SSE2-NEXT:    movdqa (%rdi), %xmm0
+; SSE2-NEXT:    movdqa 16(%rdi), %xmm1
+; SSE2-NEXT:    pcmpeqb 16(%rsi), %xmm1
+; SSE2-NEXT:    pcmpeqb (%rsi), %xmm0
+; SSE2-NEXT:    pand %xmm1, %xmm0
 ; SSE2-NEXT:    pmovmskb %xmm0, %ecx
 ; SSE2-NEXT:    xorl %eax, %eax
 ; SSE2-NEXT:    cmpl $65535, %ecx # imm = 0xFFFF
@@ -635,13 +633,11 @@ define i32 @ne_i128_pair(ptr %a, ptr %b) {
 ;
 ; SSE41-LABEL: ne_i128_pair:
 ; SSE41:       # %bb.0:
-; SSE41-NEXT:    movdqu (%rdi), %xmm0
-; SSE41-NEXT:    movdqu 16(%rdi), %xmm1
-; SSE41-NEXT:    movdqu (%rsi), %xmm2
-; SSE41-NEXT:    pxor %xmm0, %xmm2
-; SSE41-NEXT:    movdqu 16(%rsi), %xmm0
-; SSE41-NEXT:    pxor %xmm1, %xmm0
-; SSE41-NEXT:    por %xmm2, %xmm0
+; SSE41-NEXT:    movdqa (%rdi), %xmm0
+; SSE41-NEXT:    movdqa 16(%rdi), %xmm1
+; SSE41-NEXT:    pxor 16(%rsi), %xmm1
+; SSE41-NEXT:    pxor (%rsi), %xmm0
+; SSE41-NEXT:    por %xmm1, %xmm0
 ; SSE41-NEXT:    xorl %eax, %eax
 ; SSE41-NEXT:    ptest %xmm0, %xmm0
 ; SSE41-NEXT:    setne %al
@@ -649,8 +645,8 @@ define i32 @ne_i128_pair(ptr %a, ptr %b) {
 ;
 ; AVXANY-LABEL: ne_i128_pair:
 ; AVXANY:       # %bb.0:
-; AVXANY-NEXT:    vmovdqu (%rdi), %xmm0
-; AVXANY-NEXT:    vmovdqu 16(%rdi), %xmm1
+; AVXANY-NEXT:    vmovdqa (%rdi), %xmm0
+; AVXANY-NEXT:    vmovdqa 16(%rdi), %xmm1
 ; AVXANY-NEXT:    vpxor 16(%rsi), %xmm1, %xmm1
 ; AVXANY-NEXT:    vpxor (%rsi), %xmm0, %xmm0
 ; AVXANY-NEXT:    vpor %xmm1, %xmm0, %xmm0
@@ -678,13 +674,11 @@ define i32 @ne_i128_pair(ptr %a, ptr %b) {
 define i32 @eq_i128_pair(ptr %a, ptr %b) {
 ; SSE2-LABEL: eq_i128_pair:
 ; SSE2:       # %bb.0:
-; SSE2-NEXT:    movdqu (%rdi), %xmm0
-; SSE2-NEXT:    movdqu 16(%rdi), %xmm1
-; SSE2-NEXT:    movdqu (%rsi), %xmm2
-; SSE2-NEXT:    pcmpeqb %xmm0, %xmm2
-; SSE2-NEXT:    movdqu 16(%rsi), %xmm0
-; SSE2-NEXT:    pcmpeqb %xmm1, %xmm0
-; SSE2-NEXT:    pand %xmm2, %xmm0
+; SSE2-NEXT:    movdqa (%rdi), %xmm0
+; SSE2-NEXT:    movdqa 16(%rdi), %xmm1
+; SSE2-NEXT:    pcmpeqb 16(%rsi), %xmm1
+; SSE2-NEXT:    pcmpeqb (%rsi), %xmm0
+; SSE2-NEXT:    pand %xmm1, %xmm0
 ; SSE2-NEXT:    pmovmskb %xmm0, %ecx
 ; SSE2-NEXT:    xorl %eax, %eax
 ; SSE2-NEXT:    cmpl $65535, %ecx # imm = 0xFFFF
@@ -693,13 +687,11 @@ define i32 @eq_i128_pair(ptr %a, ptr %b) {
 ;
 ; SSE41-LABEL: eq_i128_pair:
 ; SSE41:       # %bb.0:
-; SSE41-NEXT:    movdqu (%rdi), %xmm0
-; SSE41-NEXT:    movdqu 16(%rdi), %xmm1
-; SSE41-NEXT:    movdqu (%rsi), %xmm2
-; SSE41-NEXT:    pxor %xmm0, %xmm2
-; SSE41-NEXT:    movdqu 16(%rsi), %xmm0
-; SSE41-NEXT:    pxor %xmm1, %xmm0
-; SSE41-NEXT:    por %xmm2, %xmm0
+; SSE41-NEXT:    movdqa (%rdi), %xmm0
+; SSE41-NEXT:    movdqa 16(%rdi), %xmm1
+; SSE41-NEXT:    pxor 16(%rsi), %xmm1
+; SSE41-NEXT:    pxor (%rsi), %xmm0
+; SSE41-NEXT:    por %xmm1, %xmm0
 ; SSE41-NEXT:    xorl %eax, %eax
 ; SSE41-NEXT:    ptest %xmm0, %xmm0
 ; SSE41-NEXT:    sete %al
@@ -707,8 +699,8 @@ define i32 @eq_i128_pair(ptr %a, ptr %b) {
 ;
 ; AVXANY-LABEL: eq_i128_pair:
 ; AVXANY:       # %bb.0:
-; AVXANY-NEXT:    vmovdqu (%rdi), %xmm0
-; AVXANY-NEXT:    vmovdqu 16(%rdi), %xmm1
+; AVXANY-NEXT:    vmovdqa (%rdi), %xmm0
+; AVXANY-NEXT:    vmovdqa 16(%rdi), %xmm1
 ; AVXANY-NEXT:    vpxor 16(%rsi), %xmm1, %xmm1
 ; AVXANY-NEXT:    vpxor (%rsi), %xmm0, %xmm0
 ; AVXANY-NEXT:    vpor %xmm1, %xmm0, %xmm0
