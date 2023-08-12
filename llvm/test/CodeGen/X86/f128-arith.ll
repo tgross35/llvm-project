@@ -3,7 +3,6 @@
 ; RUN: llc < %s -mtriple=x86_64-unknown-unknown -verify-machineinstrs | FileCheck %s --check-prefix=CHECK-64
 ;
 ; Test lowering of fp128 intrinsics
-; FIXME: these emit calls to long double functions but should emit f128 calls
 
 define fp128 @test_cbrtf128(fp128 %a) {
 ; CHECK-32-LABEL: test_cbrtf128:
@@ -21,10 +20,10 @@ declare fp128 @llvm.cbrt.f128(fp128)
 
 define fp128 @test_ceilf128(fp128 %a) {
 ; CHECK-32-LABEL: test_ceilf128:
-; CHECK-32:    calll ceill
+; CHECK-32:    calll ceilf128
 ;
 ; CHECK-64-LABEL: test_ceilf128:
-; CHECK-64:    jmp ceill@PLT # TAILCALL
+; CHECK-64:    jmp ceilf128@PLT # TAILCALL
 start:
   %0 = tail call fp128 @llvm.ceil.f128(fp128 %a)
   ret fp128 %0
@@ -84,10 +83,10 @@ declare fp128 @llvm.copysign.f128(fp128, fp128)
 
 define fp128 @test_cosf128(fp128 %a) {
 ; CHECK-32-LABEL: test_cosf128:
-; CHECK-32:    calll cosl
+; CHECK-32:    calll cosf128
 ;
 ; CHECK-64-LABEL: test_cosf128:
-; CHECK-64:    jmp cosl@PLT # TAILCALL
+; CHECK-64:    jmp cosf128@PLT # TAILCALL
 start:
   %0 = tail call fp128 @llvm.cos.f128(fp128 %a)
   ret fp128 %0
@@ -98,10 +97,10 @@ declare fp128 @llvm.cos.f128(fp128)
 
 define fp128 @test_exp2f128(fp128 %a) {
 ; CHECK-32-LABEL: test_exp2f128:
-; CHECK-32:    calll exp2l
+; CHECK-32:    calll exp2f128
 ;
 ; CHECK-64-LABEL: test_exp2f128:
-; CHECK-64:    jmp exp2l@PLT # TAILCALL
+; CHECK-64:    jmp exp2f128@PLT # TAILCALL
 start:
   %0 = tail call fp128 @llvm.exp2.f128(fp128 %a)
   ret fp128 %0
@@ -126,10 +125,10 @@ declare fp128 @llvm.__exp2f128_finite.f128(fp128)
 
 define fp128 @test_expf128(fp128 %a) {
 ; CHECK-32-LABEL: test_expf128:
-; CHECK-32:    calll expl
+; CHECK-32:    calll expf128
 ;
 ; CHECK-64-LABEL: test_expf128:
-; CHECK-64:    jmp expl@PLT # TAILCALL
+; CHECK-64:    jmp expf128@PLT # TAILCALL
 start:
   %0 = tail call fp128 @llvm.exp.f128(fp128 %a)
   ret fp128 %0
@@ -154,10 +153,10 @@ declare fp128 @llvm.__expf128_finite.f128(fp128)
 
 define fp128 @test_floorf128(fp128 %a) {
 ; CHECK-32-LABEL: test_floorf128:
-; CHECK-32:    calll floorl
+; CHECK-32:    calll floorf128
 ;
 ; CHECK-64-LABEL: test_floorf128:
-; CHECK-64:    jmp floorl@PLT # TAILCALL
+; CHECK-64:    jmp floorf128@PLT # TAILCALL
 start:
   %0 = tail call fp128 @llvm.floor.f128(fp128 %a)
   ret fp128 %0
@@ -168,10 +167,10 @@ declare fp128 @llvm.floor.f128(fp128)
 
 define fp128 @test_fmaf128(fp128 %a, fp128 %b, fp128 %c) {
 ; CHECK-32-LABEL: test_fmaf128:
-; CHECK-32:    calll fmal
+; CHECK-32:    calll fmaf128
 ;
 ; CHECK-64-LABEL: test_fmaf128:
-; CHECK-64:    jmp fmal@PLT # TAILCALL
+; CHECK-64:    jmp fmaf128@PLT # TAILCALL
 start:
   %0 = tail call fp128 @llvm.fma.f128(fp128 %a, fp128 %b, fp128 %c)
   ret fp128 %0
@@ -224,10 +223,10 @@ declare fp128 @llvm.fmod.f128(fp128, fp128)
 
 define { fp128, i32 } @test_frexpf128(fp128 %a) {
 ; CHECK-32-LABEL: test_frexpf128:
-; CHECK-32:    calll frexpl
+; CHECK-32:    calll frexpf128
 ;
 ; CHECK-64-LABEL: test_frexpf128:
-; CHECK-64:    callq frexpl@PLT
+; CHECK-64:    callq frexpf128@PLT
 start:
   %0 = tail call { fp128, i32 } @llvm.frexp.f128(fp128 %a)
   ret { fp128, i32 } %0
@@ -238,10 +237,10 @@ declare { fp128, i32 } @llvm.frexp.f128(fp128)
 
 define fp128 @test_ldexpf128(fp128 %a, i32 %b) {
 ; CHECK-32-LABEL: test_ldexpf128:
-; CHECK-32:    calll ldexpl
+; CHECK-32:    calll ldexpf128
 ;
 ; CHECK-64-LABEL: test_ldexpf128:
-; CHECK-64:    jmp ldexpl@PLT # TAILCALL
+; CHECK-64:    jmp ldexpf128@PLT # TAILCALL
 start:
   %0 = tail call fp128 @llvm.ldexp.f128(fp128 %a, i32 %b)
   ret fp128 %0
@@ -252,10 +251,10 @@ declare fp128 @llvm.ldexp.f128(fp128, i32)
 
 define i64 @test_llrintf128(fp128 %a) {
 ; CHECK-32-LABEL: test_llrintf128:
-; CHECK-32:    calll llrintl
+; CHECK-32:    calll llrintf128
 ;
 ; CHECK-64-LABEL: test_llrintf128:
-; CHECK-64:    jmp llrintl@PLT # TAILCALL
+; CHECK-64:    jmp llrintf128@PLT # TAILCALL
 start:
   %0 = tail call i64 @llvm.llrint.f128(fp128 %a)
   ret i64 %0
@@ -266,10 +265,10 @@ declare i64 @llvm.llrint.f128(fp128)
 
 define i64 @test_llroundf128(fp128 %a) {
 ; CHECK-32-LABEL: test_llroundf128:
-; CHECK-32:    calll llroundl
+; CHECK-32:    calll llroundf128
 ;
 ; CHECK-64-LABEL: test_llroundf128:
-; CHECK-64:    jmp llroundl@PLT # TAILCALL
+; CHECK-64:    jmp llroundf128@PLT # TAILCALL
 start:
   %0 = tail call i64 @llvm.llround.i64.f128(fp128 %a)
   ret i64 %0
@@ -280,10 +279,10 @@ declare i64 @llvm.llround.i64.f128(fp128)
 
 define fp128 @test_log10f128(fp128 %a) {
 ; CHECK-32-LABEL: test_log10f128:
-; CHECK-32:    calll log10l
+; CHECK-32:    calll log10f128
 ;
 ; CHECK-64-LABEL: test_log10f128:
-; CHECK-64:    jmp log10l@PLT # TAILCALL
+; CHECK-64:    jmp log10f128@PLT # TAILCALL
 start:
   %0 = tail call fp128 @llvm.log10.f128(fp128 %a)
   ret fp128 %0
@@ -308,10 +307,10 @@ declare fp128 @llvm.__log10f128_finite.f128(fp128)
 
 define fp128 @test_log2f128(fp128 %a) {
 ; CHECK-32-LABEL: test_log2f128:
-; CHECK-32:    calll log2l
+; CHECK-32:    calll log2f128
 ;
 ; CHECK-64-LABEL: test_log2f128:
-; CHECK-64:   jmp log2l@PLT # TAILCALL
+; CHECK-64:   jmp log2f128@PLT # TAILCALL
 start:
   %0 = tail call fp128 @llvm.log2.f128(fp128 %a)
   ret fp128 %0
@@ -336,10 +335,10 @@ declare fp128 @llvm.__log2f128_finite.f128(fp128)
 
 define fp128 @test_logf128(fp128 %a) {
 ; CHECK-32-LABEL: test_logf128:
-; CHECK-32:    calll logl
+; CHECK-32:    calll logf128
 ;
 ; CHECK-64-LABEL: test_logf128:
-; CHECK-64:    jmp logl@PLT # TAILCALL
+; CHECK-64:    jmp logf128@PLT # TAILCALL
 start:
   %0 = tail call fp128 @llvm.log.f128(fp128 %a)
   ret fp128 %0
@@ -364,10 +363,10 @@ declare fp128 @llvm.__logf128_finite.f128(fp128)
 
 define i64 @test_lrintf128(fp128 %a) {
 ; CHECK-32-LABEL: test_lrintf128:
-; CHECK-32:    calll lrintl
+; CHECK-32:    calll lrintf128
 ;
 ; CHECK-64-LABEL: test_lrintf128:
-; CHECK-64:    jmp lrintl@PLT # TAILCALL
+; CHECK-64:    jmp lrintf128@PLT # TAILCALL
 start:
   %0 = tail call i64 @llvm.lrint.f128(fp128 %a)
   ret i64 %0
@@ -378,10 +377,10 @@ declare i64 @llvm.lrint.f128(fp128)
 
 define i64 @test_lroundf128(fp128 %a) {
 ; CHECK-32-LABEL: test_lroundf128:
-; CHECK-32:    calll lroundl
+; CHECK-32:    calll lroundf128
 ;
 ; CHECK-64-LABEL: test_lroundf128:
-; CHECK-64:    jmp lroundl@PLT # TAILCALL
+; CHECK-64:    jmp lroundf128@PLT # TAILCALL
 start:
   %0 = tail call i64 @llvm.lround.i64.f128(fp128 %a)
   ret i64 %0
@@ -392,10 +391,10 @@ declare i64 @llvm.lround.i64.f128(fp128)
 
 define fp128 @test_nearbyintf128(fp128 %a) {
 ; CHECK-32-LABEL: test_nearbyintf128:
-; CHECK-32:    calll nearbyintl
+; CHECK-32:    calll nearbyintf128
 ;
 ; CHECK-64-LABEL: test_nearbyintf128:
-; CHECK-64:    jmp nearbyintl@PLT # TAILCALL
+; CHECK-64:    jmp nearbyintf128@PLT # TAILCALL
 start:
   %0 = tail call fp128 @llvm.nearbyint.f128(fp128 %a)
   ret fp128 %0
@@ -406,10 +405,10 @@ declare fp128 @llvm.nearbyint.f128(fp128)
 
 define fp128 @test_powf128(fp128 %a, fp128 %b) {
 ; CHECK-32-LABEL: test_powf128:
-; CHECK-32:    calll powl
+; CHECK-32:    calll powf128
 ;
 ; CHECK-64-LABEL: test_powf128:
-; CHECK-64:    jmp powl@PLT # TAILCALL
+; CHECK-64:    jmp powf128@PLT # TAILCALL
 start:
   %0 = tail call fp128 @llvm.pow.f128(fp128 %a, fp128 %b)
   ret fp128 %0
@@ -434,10 +433,10 @@ declare fp128 @llvm.__powf128_finite.f128(fp128, fp128)
 
 define fp128 @test_rintf128(fp128 %a) {
 ; CHECK-32-LABEL: test_rintf128:
-; CHECK-32:    calll rintl
+; CHECK-32:    calll rintf128
 ;
 ; CHECK-64-LABEL: test_rintf128:
-; CHECK-64:    jmp rintl@PLT # TAILCALL
+; CHECK-64:    jmp rintf128@PLT # TAILCALL
 start:
   %0 = tail call fp128 @llvm.rint.f128(fp128 %a)
   ret fp128 %0
@@ -448,10 +447,10 @@ declare fp128 @llvm.rint.f128(fp128)
 
 define fp128 @test_roundevenf128(fp128 %a) {
 ; CHECK-32-LABEL: test_roundevenf128:
-; CHECK-32:    calll roundevenl
+; CHECK-32:    calll roundevenf128
 ;
 ; CHECK-64-LABEL: test_roundevenf128:
-; CHECK-64:    jmp roundevenl@PLT # TAILCALL
+; CHECK-64:    jmp roundevenf128@PLT # TAILCALL
 start:
   %0 = tail call fp128 @llvm.roundeven.f128(fp128 %a)
   ret fp128 %0
@@ -462,10 +461,10 @@ declare fp128 @llvm.roundeven.f128(fp128)
 
 define fp128 @test_roundf128(fp128 %a) {
 ; CHECK-32-LABEL: test_roundf128:
-; CHECK-32:    calll roundl
+; CHECK-32:    calll roundf128
 ;
 ; CHECK-64-LABEL: test_roundf128:
-; CHECK-64:    jmp roundl@PLT # TAILCALL
+; CHECK-64:    jmp roundf128@PLT # TAILCALL
 start:
   %0 = tail call fp128 @llvm.round.f128(fp128 %a)
   ret fp128 %0
@@ -476,10 +475,10 @@ declare fp128 @llvm.round.f128(fp128)
 
 define fp128 @test_sinf128(fp128 %a) {
 ; CHECK-32-LABEL: test_sinf128:
-; CHECK-32:    calll sinl
+; CHECK-32:    calll sinf128
 ;
 ; CHECK-64-LABEL: test_sinf128:
-; CHECK-64:    jmp sinl@PLT # TAILCALL
+; CHECK-64:    jmp sinf128@PLT # TAILCALL
 start:
   %0 = tail call fp128 @llvm.sin.f128(fp128 %a)
   ret fp128 %0
@@ -490,10 +489,10 @@ declare fp128 @llvm.sin.f128(fp128)
 
 define fp128 @test_sqrtf128(fp128 %a) {
 ; CHECK-32-LABEL: test_sqrtf128:
-; CHECK-32:    calll sqrtl
+; CHECK-32:    calll sqrtf128
 ;
 ; CHECK-64-LABEL: test_sqrtf128:
-; CHECK-64:    jmp sqrtl@PLT # TAILCALL
+; CHECK-64:    jmp sqrtf128@PLT # TAILCALL
 start:
   %0 = tail call fp128 @llvm.sqrt.f128(fp128 %a)
   ret fp128 %0
@@ -504,10 +503,10 @@ declare fp128 @llvm.sqrt.f128(fp128)
 
 define fp128 @test_truncf128(fp128 %a) {
 ; CHECK-32-LABEL: test_truncf128:
-; CHECK-32:    calll truncl
+; CHECK-32:    calll truncf128
 ;
 ; CHECK-64-LABEL: test_truncf128:
-; CHECK-64:    jmp truncl@PLT # TAILCALL
+; CHECK-64:    jmp truncf128@PLT # TAILCALL
 start:
   %0 = tail call fp128 @llvm.trunc.f128(fp128 %a)
   ret fp128 %0
