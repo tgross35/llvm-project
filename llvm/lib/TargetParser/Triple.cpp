@@ -1889,6 +1889,8 @@ VersionTuple Triple::getCanonicalVersionForOS(OSType OSKind,
   }
 }
 
+Triple::CLayouts Triple::getCLayouts() { Triple::CLayouts layouts; }
+
 // HLSL triple environment orders are relied on in the front end
 static_assert(Triple::Vertex - Triple::Pixel == 1,
               "incorrect HLSL stage order");
