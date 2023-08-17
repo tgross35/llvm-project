@@ -175,7 +175,6 @@ public:
       : TargetInfo(Triple) {
     BFloat16Width = BFloat16Align = 16;
     BFloat16Format = &llvm::APFloat::BFloat();
-    LongDoubleFormat = &llvm::APFloat::x87DoubleExtended();
     AddrSpaceMap = &X86AddrSpaceMap;
     HasStrictFP = true;
 
@@ -427,8 +426,6 @@ public:
   X86_32TargetInfo(const llvm::Triple &Triple, const TargetOptions &Opts)
       : X86TargetInfo(Triple, Opts) {
     DoubleAlign = LongLongAlign = 32;
-    LongDoubleWidth = 96;
-    LongDoubleAlign = 32;
     SuitableAlign = 128;
     resetDataLayout(
         Triple.isOSBinFormatMachO()
@@ -531,8 +528,6 @@ class LLVM_LIBRARY_VISIBILITY DarwinI386TargetInfo
 public:
   DarwinI386TargetInfo(const llvm::Triple &Triple, const TargetOptions &Opts)
       : DarwinTargetInfo<X86_32TargetInfo>(Triple, Opts) {
-    LongDoubleWidth = 128;
-    LongDoubleAlign = 128;
     SuitableAlign = 128;
     MaxVectorAlign = 256;
     // The watchOS simulator uses the builtin bool type for Objective-C.
@@ -976,8 +971,6 @@ public:
   OHOSX86_32TargetInfo(const llvm::Triple &Triple, const TargetOptions &Opts)
       : OHOSTargetInfo<X86_32TargetInfo>(Triple, Opts) {
     SuitableAlign = 32;
-    LongDoubleWidth = 64;
-    LongDoubleFormat = &llvm::APFloat::IEEEdouble();
   }
 };
 
@@ -986,9 +979,7 @@ class LLVM_LIBRARY_VISIBILITY OHOSX86_64TargetInfo
     : public OHOSTargetInfo<X86_64TargetInfo> {
 public:
   OHOSX86_64TargetInfo(const llvm::Triple &Triple, const TargetOptions &Opts)
-      : OHOSTargetInfo<X86_64TargetInfo>(Triple, Opts) {
-    LongDoubleFormat = &llvm::APFloat::IEEEquad();
-  }
+      : OHOSTargetInfo<X86_64TargetInfo>(Triple, Opts) {}
 };
 } // namespace targets
 } // namespace clang

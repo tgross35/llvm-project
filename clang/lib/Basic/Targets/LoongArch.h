@@ -33,9 +33,6 @@ public:
       : TargetInfo(Triple) {
     HasFeatureD = false;
     HasFeatureF = false;
-    LongDoubleWidth = 128;
-    LongDoubleAlign = 128;
-    LongDoubleFormat = &llvm::APFloat::IEEEquad();
     SuitableAlign = 128;
     WCharType = SignedInt;
     WIntType = UnsignedInt;

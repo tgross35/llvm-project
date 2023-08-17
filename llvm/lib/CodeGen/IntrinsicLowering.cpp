@@ -202,6 +202,7 @@ static Value *LowerCTLZ(LLVMContext &Context, Value *V, Instruction *IP) {
 static void ReplaceFPIntrinsicWithCall(CallInst *CI, const char *Fname,
                                        const char *Dname,
                                        const char *LDname) {
+
   switch (CI->getArgOperand(0)->getType()->getTypeID()) {
   default: llvm_unreachable("Invalid type in intrinsic");
   case Type::FloatTyID:
@@ -214,6 +215,7 @@ static void ReplaceFPIntrinsicWithCall(CallInst *CI, const char *Fname,
     break;
   case Type::X86_FP80TyID:
   case Type::FP128TyID:
+    // TODO: if fp128 lowering can use long double, use that instead
   case Type::PPC_FP128TyID:
     ReplaceCallWith(LDname, CI, CI->arg_begin(), CI->arg_end(),
                     CI->getArgOperand(0)->getType());

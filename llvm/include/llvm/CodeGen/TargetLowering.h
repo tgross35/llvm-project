@@ -1933,6 +1933,19 @@ public:
     return false;
   }
 
+  /// How to lower `fp128` math intrinsics
+  enum class F128Lowering {
+    F128 = 0,       // Lower to `f128`-specific functions (`sinf128`)
+    LongDouble = 1, // Lower to `long double` function (`sinl`)
+  };
+
+  /// Control the lowering of LLVM's `f128` math intrinsics. If `false`
+  /// (default), LLVM will be pessimistic and lower the intrinsics to `f128`-
+  /// specific calls (e.g. `sinf128`) which may not be provided in all cases. If
+  /// `true`, they will instead be lowered to the better-supported long double
+  /// functions (`sinl`).
+  virtual F128Lowering f128MathLowering(Module &M);
+
 protected:
   Value *getDefaultSafeStackPointerLocation(IRBuilderBase &IRB,
                                             bool UseTLS) const;
@@ -3277,19 +3290,6 @@ public:
   //===----------------------------------------------------------------------===//
   /// Check whether or not \p MI needs to be moved close to its uses.
   virtual bool shouldLocalize(const MachineInstr &MI, const TargetTransformInfo *TTI) const;
-
-  /// How to lower `fp128` math intrinsics
-  enum class F128Lowering {
-    F128 = 0,       // Lower to `f128`-specific functions (`sinf128`)
-    LongDouble = 1, // Lower to `long double` function (`sinl`)
-  };
-
-  /// Control the lowering of LLVM's `f128` math intrinsics. If `false`
-  /// (default), LLVM will be pessimistic and lower the intrinsics to `f128`-
-  /// specific calls (e.g. `sinf128`) which may not be provided in all cases. If
-  /// `true`, they will instead be lowered to the better-supported long double
-  /// functions (`sinl`).
-  virtual F128Lowering f128MathLowering() { return F128Lowering::F128; }
 
 private:
   const TargetMachine &TM;
