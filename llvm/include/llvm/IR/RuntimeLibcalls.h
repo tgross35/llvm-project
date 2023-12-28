@@ -41,6 +41,16 @@ template <> struct enum_iteration_traits<RTLIB::LibcallImpl> {
   static constexpr bool is_iterable = true;
 };
 
+/// Library names to use for `fp128` libcalls.
+enum class F128LibcallFormat {
+  /// C23 `*f128` lowering, e.g. `sinf128`
+  Default = 0,
+  /// `long double` *l` lowering, e.g. `sinl`.
+  LongDouble = 1,
+  // If needed, this could be extended with an option for `q` suffixes from
+  // libquadmath.
+};
+
 namespace RTLIB {
 
 // Return an iterator over all Libcall values.
@@ -185,6 +195,13 @@ private:
   LLVM_ABI void initLibcalls(const Triple &TT, ExceptionHandling ExceptionModel,
                              FloatABI::ABIType FloatABI, EABI ABIType,
                              StringRef ABIName);
+
+  /// Set a specific lowering convention for `fp128` math libcalls.
+  ///
+  /// By default, `fp128` math functions get lowered to the C23 `sinf128`-
+  /// style symbols. This allows overriding with `sinl`-style symbols on
+  /// platforms where `long double` is known to be identical to _Float128.
+  void setF128LibcallFormat(F128LibcallFormat Format);
 };
 
 } // namespace RTLIB

@@ -321,4 +321,68 @@ bool RuntimeLibcallsInfo::darwinHasExp10(const Triple &TT) {
   default:
     return false;
   }
+
+  // By default fp128 libcalls get lowered to `*f128` symbols, which is
+  // safest because the symbols are only ever for binary128 on all platforms.
+  // Unfortunately many platforms only have the `*l` (`long double`) symbols,
+  // which vary by architecture and compilation flags, so we have to use them
+  // sometimes.
+  if (TT.shouldLowerf128AsLongDouble())
+    setF128LibcallFormat(F128LibcallFormat::LongDouble);
+}
+
+void RuntimeLibcallsInfo::setF128LibcallFormat(F128LibcallFormat Format) {
+  bool UseLD = Format == F128LibcallFormat::LongDouble;
+
+  setLibcallImpl(RTLIB::ACOS_F128, UseLD ? RTLIB::ACOSL : RTLIB::ACOS_F128);
+  setLibcallImpl(RTLIB::ASIN_F128, UseLD ? RTLIB::ASINL : RTLIB::ASIN_F128);
+  setLibcallImpl(RTLIB::ATAN2_F128, UseLD ? RTLIB::ATAN2L : RTLIB::ATAN2_F128);
+  setLibcallImpl(RTLIB::ATAN_F128, UseLD ? RTLIB::ATANL : RTLIB::ATAN_F128);
+  setLibcallImpl(RTLIB::CBRT_F128, UseLD ? RTLIB::CBRTL : RTLIB::CBRT_F128);
+  setLibcallImpl(RTLIB::CEIL_F128, UseLD ? RTLIB::CEILL : RTLIB::CEIL_F128);
+  setLibcallImpl(RTLIB::COPYSIGN_F128, UseLD ? RTLIB::COPYSIGNL : RTLIB::COPYSIGN_F128);
+  setLibcallImpl(RTLIB::COSH_F128, UseLD ? RTLIB::COSHL : RTLIB::COSH_F128);
+  setLibcallImpl(RTLIB::COS_F128, UseLD ? RTLIB::COSL : RTLIB::COS_F128);
+  setLibcallImpl(RTLIB::EXP10_F128, UseLD ? RTLIB::EXP10L : RTLIB::EXP10_F128);
+  setLibcallImpl(RTLIB::EXP2_F128, UseLD ? RTLIB::EXP2L : RTLIB::EXP2_F128);
+  setLibcallImpl(RTLIB::EXP_F128, UseLD ? RTLIB::EXPL : RTLIB::EXP_F128);
+  setLibcallImpl(RTLIB::FLOOR_F128, UseLD ? RTLIB::FLOORL : RTLIB::FLOOR_F128);
+  setLibcallImpl(RTLIB::FMAXIMUMNUM_F128,
+                 UseLD ? RTLIB::FMAXIMUM_NUML : RTLIB::FMAXIMUM_NUMF128);
+  setLibcallImpl(RTLIB::FMAXIMUM_F128, UseLD ? RTLIB::FMAXIMUML : RTLIB::FMAXIMUMF128);
+  setLibcallImpl(RTLIB::FMAX_F128, UseLD ? RTLIB::FMAXL : RTLIB::FMAXF128);
+  setLibcallImpl(RTLIB::FMA_F128, UseLD ? RTLIB::FMAL : RTLIB::FMAF128);
+  setLibcallImpl(RTLIB::FMINIMUMNUM_F128,
+                 UseLD ? RTLIB::FMINIMUM_NUML : RTLIB::FMINIMUM_NUMF128);
+  setLibcallImpl(RTLIB::FMINIMUM_F128, UseLD ? RTLIB::FMINIMUML : RTLIB::FMINIMUMF128);
+  setLibcallImpl(RTLIB::FMIN_F128, UseLD ? RTLIB::FMINL : RTLIB::FMINF128);
+  setLibcallImpl(RTLIB::FREXP_F128, UseLD ? RTLIB::FREXPL : RTLIB::FREXPF128);
+  setLibcallImpl(RTLIB::LDEXP_F128, UseLD ? RTLIB::LDEXPL : RTLIB::LDEXPF128);
+  setLibcallImpl(RTLIB::LLRINT_F128, UseLD ? RTLIB::LLRINTL : RTLIB::LLRINTF128);
+  setLibcallImpl(RTLIB::LLROUND_F128, UseLD ? RTLIB::LLROUNDL : RTLIB::LLROUNDF128);
+  setLibcallImpl(RTLIB::LOG10_F128, UseLD ? RTLIB::LOG10L : RTLIB::LOG10F128);
+  setLibcallImpl(RTLIB::LOG2_F128, UseLD ? RTLIB::LOG2L : RTLIB::LOG2F128);
+  setLibcallImpl(RTLIB::LOG_F128, UseLD ? RTLIB::LOGL : RTLIB::LOGF128);
+  setLibcallImpl(RTLIB::LRINT_F128, UseLD ? RTLIB::LRINTL : RTLIB::LRINTF128);
+  setLibcallImpl(RTLIB::LROUND_F128, UseLD ? RTLIB::LROUNDL : RTLIB::LROUNDF128);
+  setLibcallImpl(RTLIB::MODF_F128, UseLD ? RTLIB::MODFL : RTLIB::MODFF128);
+  setLibcallImpl(RTLIB::NEARBYINT_F128, UseLD ? RTLIB::NEARBYINTL : RTLIB::NEARBYINTF128);
+  setLibcallImpl(RTLIB::POW_F128, UseLD ? RTLIB::POWL : RTLIB::POWF128);
+  setLibcallImpl(RTLIB::REM_F128, UseLD ? RTLIB::FMODL : RTLIB::FMODF128);
+  setLibcallImpl(RTLIB::RINT_F128, UseLD ? RTLIB::RINTL : RTLIB::RINTF128);
+  setLibcallImpl(RTLIB::ROUNDEVEN_F128, UseLD ? RTLIB::ROUNDEVENL : RTLIB::ROUNDEVENF128);
+  setLibcallImpl(RTLIB::ROUND_F128, UseLD ? RTLIB::ROUNDL : RTLIB::ROUNDF128);
+  setLibcallImpl(RTLIB::SINCOSPI_F128, UseLD ? RTLIB::SINCOSPIL : RTLIB::SINCOSPIF128);
+  setLibcallImpl(RTLIB::SINH_F128, UseLD ? RTLIB::SINHL : RTLIB::SINHF128);
+  setLibcallImpl(RTLIB::SIN_F128, UseLD ? RTLIB::SINL : RTLIB::SINF128);
+  setLibcallImpl(RTLIB::SQRT_F128, UseLD ? RTLIB::SQRTL : RTLIB::SQRTF128);
+  setLibcallImpl(RTLIB::TANH_F128, UseLD ? RTLIB::TANHL : RTLIB::TANHF128);
+  setLibcallImpl(RTLIB::TAN_F128, UseLD ? RTLIB::TANL : RTLIB::TANF128);
+  setLibcallImpl(RTLIB::TRUNC_F128, UseLD ? RTLIB::TRUNCL : RTLIB::TRUNCF128);
+
+  if (nullptr != getLibcallName(RTLIB::SINCOS_F128)) {
+    // Upsate sincos only if already set (sincos is allowed to be null to use
+    // sin+cos instead).
+    setLibcallName(RTLIB::SINCOS_F128, UseLD ? "sincosl" : "sincosf128");
+  }
 }
