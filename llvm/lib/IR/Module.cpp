@@ -32,6 +32,7 @@
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Metadata.h"
 #include "llvm/IR/ModuleSummaryIndex.h"
+#include "llvm/IR/RuntimeLibcalls.h"
 #include "llvm/IR/SymbolTableListTraits.h"
 #include "llvm/IR/Type.h"
 #include "llvm/IR/TypeFinder.h"
@@ -209,7 +210,7 @@ FunctionCallee Module::getOrInsertFunction(StringRef Name, FunctionType *Ty,
     // Nope, add it
     Function *New = Function::Create(Ty, GlobalVariable::ExternalLinkage,
                                      DL.getProgramAddressSpace(), Name, this);
-    if (!New->isIntrinsic())       // Intrinsics get attrs set on construction
+    if (!New->isIntrinsic()) // Intrinsics get attrs set on construction
       New->setAttributes(AttributeList);
     return {Ty, New}; // Return the new prototype.
   }
@@ -243,7 +244,7 @@ Function *Module::getFunction(StringRef Name) const {
 GlobalVariable *Module::getGlobalVariable(StringRef Name,
                                           bool AllowLocal) const {
   if (GlobalVariable *Result =
-      dyn_cast_or_null<GlobalVariable>(getNamedValue(Name)))
+          dyn_cast_or_null<GlobalVariable>(getNamedValue(Name)))
     if (AllowLocal || !Result->hasLocalLinkage())
       return Result;
   return nullptr;
@@ -334,10 +335,11 @@ bool Module::isValidModFlagBehavior(Metadata *MD, ModFlagBehavior &MFB) {
 }
 
 /// getModuleFlagsMetadata - Returns the module flags in the provided vector.
-void Module::
-getModuleFlagsMetadata(SmallVectorImpl<ModuleFlagEntry> &Flags) const {
+void Module::getModuleFlagsMetadata(
+    SmallVectorImpl<ModuleFlagEntry> &Flags) const {
   const NamedMDNode *ModFlags = getModuleFlagsMetadata();
-  if (!ModFlags) return;
+  if (!ModFlags)
+    return;
 
   for (const MDNode *Flag : ModFlags->operands()) {
     // The verifier will catch errors, so no need to check them here.
@@ -914,4 +916,10 @@ VersionTuple Module::getDarwinTargetVariantSDKVersion() const {
 
 void Module::setDarwinTargetVariantSDKVersion(VersionTuple Version) {
   addSDKVersionMD(Version, *this, "darwin.target_variant.SDK Version");
+}
+
+void Module::setF128LibcallFormat(F128LibcallFormat Format) {
+  addModuleFlag(ModFlagBehavior::Error,
+                RTLIB::RuntimeLibcallsInfo::F128LibcallModuleId,
+                static_cast<uint32_t>(Format));
 }

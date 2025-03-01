@@ -28,6 +28,7 @@
 #include "llvm/IR/GlobalVariable.h"
 #include "llvm/IR/Metadata.h"
 #include "llvm/IR/ProfileSummary.h"
+#include "llvm/IR/RuntimeLibcalls.h"
 #include "llvm/IR/SymbolTableListTraits.h"
 #include "llvm/Support/CBindingWrapping.h"
 #include "llvm/Support/CodeGen.h"
@@ -1065,6 +1066,12 @@ public:
 
   /// Set the target variant version build SDK version metadata.
   void setDarwinTargetVariantSDKVersion(VersionTuple Version);
+
+  /// Rather than using the default `sinf128(_Float128)`-style libcalls for
+  /// `fp128`, lower to sinl(long double)`-style. This may be desirable in
+  /// cases where system `long double` is format- and ABI-compatible with
+  /// `_Float128` but the system libm does not provide `*f128` symbols.
+  void setF128LibcallFormat(F128LibcallFormat LibcallFmt);
 };
 
 /// Given "llvm.used" or "llvm.compiler.used" as a global name, collect the
