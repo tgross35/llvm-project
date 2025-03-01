@@ -662,6 +662,7 @@ TargetLoweringBase::TargetLoweringBase(const TargetMachine &tm)
   SupportsUnalignedAtomics = false;
 
   RTLIB::initCmpLibcallCCs(CmpLibcallCCs);
+  Libcalls.setF128LibcallFormat(tm.Options.F128LibcallFormat);
 }
 
 void TargetLoweringBase::initActions() {

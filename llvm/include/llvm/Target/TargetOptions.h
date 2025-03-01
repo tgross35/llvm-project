@@ -15,6 +15,7 @@
 #define LLVM_TARGET_TARGETOPTIONS_H
 
 #include "llvm/ADT/FloatingPointMode.h"
+#include "llvm/IR/RuntimeLibcalls.h"
 #include "llvm/MC/MCTargetOptions.h"
 
 #include <memory>
@@ -154,7 +155,8 @@ namespace llvm {
           PPCGenScalarMASSEntries(false), JMCInstrument(false),
           EnableCFIFixup(false), MisExpect(false), XCOFFReadOnlyPointers(false),
           VerifyArgABICompliance(true),
-          FPDenormalMode(DenormalMode::IEEE, DenormalMode::IEEE) {}
+          FPDenormalMode(DenormalMode::IEEE, DenormalMode::IEEE),
+          F128LibcallFormat(F128LibcallFormat::Default) {}
 
     /// DisableFramePointerElim - This returns true if frame pointer elimination
     /// optimization should be disabled for the given machine function.
@@ -432,6 +434,8 @@ namespace llvm {
 
     /// Which debugger to tune for.
     DebuggerKind DebuggerTuning = DebuggerKind::Default;
+
+    llvm::F128LibcallFormat F128LibcallFormat;
 
   private:
     /// Flushing mode to assume in default FP environment.

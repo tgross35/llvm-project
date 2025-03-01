@@ -1380,6 +1380,7 @@ Error LTO::runRegularLTO(AddStreamFn AddStream) {
 }
 
 SmallVector<const char *> LTO::getRuntimeLibcallSymbols(const Triple &TT) {
+  fprintf(stderr, "call from lto\n");
   RTLIB::RuntimeLibcallsInfo Libcalls(TT);
   SmallVector<const char *> LibcallSymbols;
   copy_if(Libcalls.getLibcallNames(), std::back_inserter(LibcallSymbols),

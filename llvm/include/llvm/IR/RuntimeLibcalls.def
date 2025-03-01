@@ -86,7 +86,8 @@ HANDLE_LIBCALL(CTLZ_I32, "__clzsi2")
 HANDLE_LIBCALL(CTLZ_I64, "__clzdi2")
 HANDLE_LIBCALL(CTLZ_I128, "__clzti2")
 
-// Floating-point
+// Floating-point. Note that new fp128 math routines should also be added to
+// setF128LibcallFormat in RuntimeLibcalls.cpp.
 HANDLE_LIBCALL(ADD_F32, "__addsf3")
 HANDLE_LIBCALL(ADD_F64, "__adddf3")
 HANDLE_LIBCALL(ADD_F80, "__addxf3")

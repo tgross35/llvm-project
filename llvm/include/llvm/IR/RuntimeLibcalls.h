@@ -22,6 +22,17 @@
 #include "llvm/TargetParser/Triple.h"
 
 namespace llvm {
+
+/// Library names to use for `fp128` libcalls.
+// If needed, this could be extended with a `Quadmath` option for `q`-suffixed
+// `libquadmath` symbols.
+enum class F128LibcallFormat {
+  /// C23 `*f128` lowering, e.g. `sinf128`
+  Default = 0,
+  /// `long double` *l` lowering, e.g. `sinl`.
+  LongDouble = 1,
+};
+
 namespace RTLIB {
 
 /// RTLIB::Libcall enum - This enum defines all of the runtime library calls
@@ -42,22 +53,7 @@ enum Libcall {
 struct RuntimeLibcallsInfo {
   /// Default libcalls for the triple. Note that `fixupLibcalls` should also be
   /// called in order to apply machine-specific and configurable behavior.
-  explicit RuntimeLibcallsInfo(const Triple &TT) {
-    initLibcalls(TT);
-  }
-
-  /// Apply nondefault overrides to libcalls based on machine configuration.
-  ///
-  /// @param[in] TM               Used to account for ABI-secific affects on
-  ///                             libcalls.
-  /// @param[in] LongDoubleFormat If set, override the platform default.
-  // TODO: maybe make the option an enum
-  //     enum Fp128LibcallFormat {
-  //         AsF128; // always lower to f128 versions (probably what Rust will do)
-  //         AsLongDouble; // always lower f128 as long double (probably what Clang should do)
-  //         AsPlatformDefault; // don't change anything
-  //     }
-  void adjustLibcalls(const TargetMachine &TM, const fltSemantics *LongDoubleFormat);
+  explicit RuntimeLibcallsInfo(const Triple &TT) { initLibcalls(TT); }
 
   /// Rename the default libcall routine name for the specified libcall.
   void setLibcallName(RTLIB::Libcall Call, const char *Name) {
@@ -88,6 +84,26 @@ struct RuntimeLibcallsInfo {
     return llvm::make_range(LibcallRoutineNames,
                             LibcallRoutineNames + RTLIB::UNKNOWN_LIBCALL);
   }
+
+  /// Set a specific lowering convention for `fp128` math libcalls.
+  ///
+  /// By default, `fp128` math functions get lowered to the C23 `sinf128`-
+  /// style symbols. This allows overriding with `sinl`-style symbols on
+  /// platforms where `long double` is known to be identical to _Float128.
+  /// versions, e.g. `sinf128`.
+  void setF128LibcallFormat(F128LibcallFormat Format);
+
+  /// Set the `fp128` libcall format from a module flag.
+  void setF128LibcallFormatFromInt(uint32_t Val) {
+    fprintf(stderr, "setting flag\n");
+    if (Val == static_cast<uint32_t>(F128LibcallFormat::LongDouble)) {
+      setF128LibcallFormat(F128LibcallFormat::LongDouble);
+    } else {
+      setF128LibcallFormat(F128LibcallFormat::Default);
+    }
+  }
+
+  static constexpr const StringRef F128LibcallModuleId = "Fp128 Libcall Format";
 
 private:
   /// Stores the name each libcall.

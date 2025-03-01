@@ -16,6 +16,7 @@
 #include "llvm/Bitcode/BitcodeReader.h"
 #include "llvm/Config/llvm-config.h"
 #include "llvm/IR/Comdat.h"
+#include "llvm/IR/Constants.h"
 #include "llvm/IR/DataLayout.h"
 #include "llvm/IR/GlobalAlias.h"
 #include "llvm/IR/GlobalObject.h"
@@ -213,11 +214,21 @@ Expected<int> Builder::getComdatIndex(const Comdat *C, const Module *M) {
   return P.first->second;
 }
 
-static DenseSet<StringRef> buildPreservedSymbolsSet(const Triple &TT) {
+/// Initialize a set with the platform's libcalls.
+static DenseSet<StringRef> buildPreservedSymbolsSet(const Module *M) {
   DenseSet<StringRef> PreservedSymbolSet(std::begin(PreservedSymbols),
                                          std::end(PreservedSymbols));
 
+  const Triple &TT = llvm::Triple(M->getTargetTriple());
   RTLIB::RuntimeLibcallsInfo Libcalls(TT);
+
+  // Configure libcalls based on module flags.
+  const auto *Flag = mdconst::extract_or_null<ConstantInt>(
+      M->getModuleFlag(RTLIB::RuntimeLibcallsInfo::F128LibcallModuleId));
+  Libcalls.setF128LibcallFormatFromInt(Flag->getZExtValue());
+
+  fprintf(stderr, "AOJDSFOIDOIFJD %d\n", Flag->getZExtValue());
+
   for (const char *Name : Libcalls.getLibcallNames()) {
     if (Name)
       PreservedSymbolSet.insert(Name);
@@ -281,8 +292,7 @@ Error Builder::addSymbol(const ModuleSymbolTable &Msymtab,
   setStr(Sym.IRName, GV->getName());
 
   static const DenseSet<StringRef> PreservedSymbolsSet =
-      buildPreservedSymbolsSet(
-          llvm::Triple(GV->getParent()->getTargetTriple()));
+      buildPreservedSymbolsSet(GV->getParent());
   bool IsPreservedSymbol = PreservedSymbolsSet.contains(GV->getName());
 
   if (Used.count(GV) || IsPreservedSymbol)
