@@ -227,6 +227,8 @@ static DenseSet<StringRef> buildPreservedSymbolsSet(const Module *M) {
       M->getModuleFlag(RTLIB::RuntimeLibcallsInfo::F128LibcallModuleId));
   Libcalls.setF128LibcallFormatFromInt(Flag->getZExtValue());
 
+  fprintf(stderr, "AOJDSFOIDOIFJD %d\n", Flag->getZExtValue());
+
   for (const char *Name : Libcalls.getLibcallNames()) {
     if (Name)
       PreservedSymbolSet.insert(Name);

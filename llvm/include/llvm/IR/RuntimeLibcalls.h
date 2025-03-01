@@ -94,15 +94,16 @@ struct RuntimeLibcallsInfo {
   void setF128LibcallFormat(F128LibcallFormat Format);
 
   /// Set the `fp128` libcall format from a module flag.
-  void setF128LibcallFormatFromInt(uint64_t Val) {
-    if (Val == static_cast<uint64_t>(F128LibcallFormat::LongDouble)) {
+  void setF128LibcallFormatFromInt(uint32_t Val) {
+    fprintf(stderr, "setting flag\n");
+    if (Val == static_cast<uint32_t>(F128LibcallFormat::LongDouble)) {
       setF128LibcallFormat(F128LibcallFormat::LongDouble);
     } else {
       setF128LibcallFormat(F128LibcallFormat::Default);
     }
   }
 
-  static constexpr const StringRef F128LibcallModuleId = "";
+  static constexpr const StringRef F128LibcallModuleId = "Fp128 Libcall Format";
 
 private:
   /// Stores the name each libcall.
