@@ -110,15 +110,18 @@ std::string Linux::getMultiarchTriple(const Driver &D,
       return TargetTriple.str();
     case llvm::Triple::GNUSF:
     case llvm::Triple::MuslSF:
+    case llvm::Triple::MuslSFF128:
       FPFlavor = "sf";
       break;
     case llvm::Triple::GNUF32:
     case llvm::Triple::MuslF32:
+    case llvm::Triple::MuslF32F128:
       FPFlavor = "f32";
       break;
     case llvm::Triple::GNU:
     case llvm::Triple::GNUF64:
     case llvm::Triple::Musl:
+    case llvm::Triple::MuslF128:
       // This was going to be "f64" in an earlier Toolchain Conventions
       // revision, but starting from Feb 2023 the F64 ABI variants are
       // unmarked in their canonical forms.

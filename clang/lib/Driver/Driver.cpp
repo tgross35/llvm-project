@@ -796,8 +796,7 @@ static llvm::Triple computeTargetTriple(const Driver &D,
             Target.getEnvironment() == llvm::Triple::GNUT64 ||
             Target.getEnvironment() == llvm::Triple::GNUABI64)
           Target.setEnvironment(llvm::Triple::GNUABIN32);
-        else if (Target.getEnvironment() == llvm::Triple::Musl ||
-                 Target.getEnvironment() == llvm::Triple::MuslABI64)
+        else if (Target.isMusl())
           Target.setEnvironment(llvm::Triple::MuslABIN32);
       } else if (ABIName == "64") {
         Target = Target.get64BitArchVariant();
@@ -808,6 +807,9 @@ static llvm::Triple computeTargetTriple(const Driver &D,
         else if (Target.getEnvironment() == llvm::Triple::Musl ||
                  Target.getEnvironment() == llvm::Triple::MuslABIN32)
           Target.setEnvironment(llvm::Triple::MuslABI64);
+        else if (Target.getEnvironment() == llvm::Triple::MuslF128 ||
+                 Target.getEnvironment() == llvm::Triple::MuslABIN3F128)
+          Target.setEnvironment(llvm::Triple::MuslABI64F128);
       }
     }
   }

@@ -262,13 +262,21 @@ public:
     EABIHF,
     Android,
     Musl,
-    MuslABIN32,
-    MuslABI64,
-    MuslEABI,
-    MuslEABIHF,
-    MuslF32,
-    MuslSF,
-    MuslX32,
+    MuslABIN32,     // MIPS N32 ABI
+    MuslABI64,      // MIPS N64 ABI
+    MuslEABI,       // Arm32 EABI
+    MuslEABIHF,     // Arm32 EABI + HF
+    MuslF32,        // LoongArch ILP32F/LP64F
+    MuslSF,         // LoongArch ILP32S/LP64S
+    MuslX32,        // Musl using 32-bit ABI on x86_64
+    // Musl with `*f128` math symbols available (e.g. `sqrtf128` rather than
+    // only `sqrtl`). 32-bit musl variants are excluded sin e `*f128` symbols
+    // are required to use `fp128` at all.
+    MuslF128,
+    MuslABI64F128,
+    MuslF32F128,
+    MuslSFF128,
+
     LLVM,
 
     MSVC,
@@ -824,6 +832,10 @@ public:
            getEnvironment() == Triple::MuslF32 ||
            getEnvironment() == Triple::MuslSF ||
            getEnvironment() == Triple::MuslX32 ||
+           getEnvironment() == Triple::MuslF128 ||
+           getEnvironment() == Triple::MuslABI64F128 ||
+           getEnvironment() == Triple::MuslF32F128 ||
+           getEnvironment() == Triple::MuslSFF128 ||
            getEnvironment() == Triple::OpenHOS || isOSLiteOS();
   }
 
@@ -1079,7 +1091,7 @@ public:
   // Tests whether the target is N32.
   bool isABIN32() const {
     EnvironmentType Env = getEnvironment();
-    return Env == Triple::GNUABIN32 || Env == Triple::MuslABIN32;
+    return Env == Triple::GNUABIN32 || Env == Triple::MuslABIN32 ;
   }
 
   /// Tests whether the target is X32.

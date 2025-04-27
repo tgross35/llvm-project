@@ -361,6 +361,10 @@ StringRef Triple::getEnvironmentTypeName(EnvironmentType Kind) {
   case MuslSF:
     return "muslsf";
   case MuslX32: return "muslx32";
+  case MuslF128: return "musl_f128";
+  case MuslABI64F128: return "muslabi64_f128";
+  case MuslF32F128: return "muslf32_f128";
+  case MuslSFF128: return "muslsf_f128";
   case Simulator: return "simulator";
   case Pixel: return "pixel";
   case Vertex: return "vertex";
@@ -733,6 +737,10 @@ static Triple::EnvironmentType parseEnvironment(StringRef EnvironmentName) {
       .StartsWith("gnut64", Triple::GNUT64)
       .StartsWith("gnu", Triple::GNU)
       .StartsWith("android", Triple::Android)
+      .StartsWith("muslabi64_f128", Triple::MuslABI64F128)
+      .StartsWith("muslf32_f128", Triple::MuslF32F128)
+      .StartsWith("muslsf_f128", Triple::MuslSFF128)
+      .StartsWith("musl_f128", Triple::MuslF128)
       .StartsWith("muslabin32", Triple::MuslABIN32)
       .StartsWith("muslabi64", Triple::MuslABI64)
       .StartsWith("musleabihf", Triple::MuslEABIHF)

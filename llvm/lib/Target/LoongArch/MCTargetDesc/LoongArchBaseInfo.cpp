@@ -54,10 +54,12 @@ static ABI getTripleABI(const Triple &TT) {
   switch (TT.getEnvironment()) {
   case llvm::Triple::EnvironmentType::GNUSF:
   case llvm::Triple::EnvironmentType::MuslSF:
+  case llvm::Triple::EnvironmentType::MuslSFF128:
     TripleABI = Is64Bit ? ABI_LP64S : ABI_ILP32S;
     break;
   case llvm::Triple::EnvironmentType::GNUF32:
   case llvm::Triple::EnvironmentType::MuslF32:
+  case llvm::Triple::EnvironmentType::MuslF32F128:
     TripleABI = Is64Bit ? ABI_LP64F : ABI_ILP32F;
     break;
   // Let the fallback case behave like {ILP32,LP64}D.

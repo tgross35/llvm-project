@@ -124,8 +124,7 @@ std::unique_ptr<TargetInfo> AllocateTarget(const llvm::Triple &Triple,
     return std::make_unique<XCoreTargetInfo>(Triple, Opts);
 
   case llvm::Triple::hexagon:
-    if (os == llvm::Triple::Linux &&
-        Triple.getEnvironment() == llvm::Triple::Musl)
+    if (os == llvm::Triple::Linux && Triple.isMusl())
       return std::make_unique<LinuxTargetInfo<HexagonTargetInfo>>(Triple, Opts);
     return std::make_unique<HexagonTargetInfo>(Triple, Opts);
 

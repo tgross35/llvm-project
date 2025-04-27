@@ -113,7 +113,7 @@ public:
 
   const Triple &getTargetTriple() const { return TargetTriple; }
   bool isEnvironmentMusl() const {
-    return TargetTriple.getEnvironment() == Triple::Musl;
+    return TargetTriple.isMusl();
   }
 
   /// getInstrItins - Return the instruction itineraries based on subtarget
