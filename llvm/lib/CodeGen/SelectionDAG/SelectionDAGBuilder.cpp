@@ -11679,6 +11679,7 @@ void SelectionDAGISel::LowerArguments(const Function &F) {
       // specify the alignment it wants.
       const Align OriginalAlignment(
           TLI->getABIAlignmentForCallingConv(ArgTy, DL));
+      printf("argno %d val %d align %lld\n", ArgNo, Value, OriginalAlignment.value());
       Flags.setOrigAlign(OriginalAlignment);
 
       Align MemAlign;
