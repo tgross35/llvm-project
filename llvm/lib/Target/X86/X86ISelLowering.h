@@ -1617,6 +1617,9 @@ namespace llvm {
     unsigned getNumRegistersForCallingConv(LLVMContext &Context,
                                            CallingConv::ID CC,
                                            EVT VT) const override;
+  
+    Align getABIAlignmentForCallingConv(Type *ArgTy,
+                                        const DataLayout &DL) const override;
 
     unsigned getVectorTypeBreakdownForCallingConv(
         LLVMContext &Context, CallingConv::ID CC, EVT VT, EVT &IntermediateVT,

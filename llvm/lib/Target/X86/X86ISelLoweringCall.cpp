@@ -172,6 +172,25 @@ unsigned X86TargetLowering::getNumRegistersForCallingConv(LLVMContext &Context,
   return TargetLowering::getNumRegistersForCallingConv(Context, CC, VT);
 }
 
+
+Align X86TargetLowering::getABIAlignmentForCallingConv(
+    Type *ArgTy, const DataLayout &DL) const {
+
+  printf("argty int %d bits %lld\n", ArgTy->isIntegerTy(), ArgTy->getPrimitiveSizeInBits().getFixedValue());
+  
+  // ArgTy->getStructName()
+  // auto Foo =
+    // EVT(ArgTy).getEVTString();
+  // printf("numregs %d name %.*s\n", NumRegs, (int)Foo.length(), Foo.data());
+  if (ArgTy->isFP128Ty() || ArgTy->isIntegerTy(128)) {
+    printf("yeah we're aligning\n");
+    return Align(16);
+  }
+
+  const Align ABITypeAlign = DL.getABITypeAlign(ArgTy);
+  return ABITypeAlign;
+}
+
 unsigned X86TargetLowering::getVectorTypeBreakdownForCallingConv(
     LLVMContext &Context, CallingConv::ID CC, EVT VT, EVT &IntermediateVT,
     unsigned &NumIntermediates, MVT &RegisterVT) const {
@@ -1335,6 +1354,7 @@ X86TargetLowering::LowerMemArgument(SDValue Chain, CallingConv::ID CallConv,
     ValVT = VA.getLocVT();
   else
     ValVT = VA.getValVT();
+  printf("    valvt: %s\n", ValVT.getEVTString().c_str());
 
   // FIXME: For now, all byval parameter objects are marked mutable. This can be
   // changed with more analysis.
@@ -1695,6 +1715,7 @@ SDValue X86TargetLowering::LowerFormalArguments(
   MachineFunction &MF = DAG.getMachineFunction();
   X86MachineFunctionInfo *FuncInfo = MF.getInfo<X86MachineFunctionInfo>();
 
+  printf("ins size %zu\n", Ins.size());
   const Function &F = MF.getFunction();
   if (F.hasExternalLinkage() && Subtarget.isTargetCygMing() &&
       F.getName() == "main")
@@ -1734,6 +1755,16 @@ SDValue X86TargetLowering::LowerFormalArguments(
        ++I, ++InsIndex) {
     assert(InsIndex < Ins.size() && "Invalid Ins index");
     CCValAssign &VA = ArgLocs[I];
+
+    printf(
+      "func `%.*s` arg number %d, isreg %d, ismem %d, needs custom %d\n",
+      (int)MF.getName().size(),
+      MF.getName().data(),
+      I,
+      VA.isRegLoc(),
+      VA.isMemLoc(),
+      VA.needsCustom()
+    );
 
     if (VA.isRegLoc()) {
       EVT RegVT = VA.getLocVT();

@@ -86,11 +86,13 @@ CCState::AnalyzeFormalArguments(const SmallVectorImpl<ISD::InputArg> &Ins,
                                 CCAssignFn Fn) {
   unsigned NumArgs = Ins.size();
 
+  printf("    size in lower start: %zu num %d\n", Locs.size(), NumArgs);
   for (unsigned i = 0; i != NumArgs; ++i) {
     MVT ArgVT = Ins[i].VT;
     ISD::ArgFlagsTy ArgFlags = Ins[i].Flags;
     if (Fn(i, ArgVT, ArgVT, CCValAssign::Full, ArgFlags, *this))
       report_fatal_error("unable to allocate function argument #" + Twine(i));
+    printf("    size in lower %d: %zu\n", i, Locs.size());
   }
 }
 

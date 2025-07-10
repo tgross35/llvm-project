@@ -10,6 +10,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include <iostream>
 #include "SelectionDAGBuilder.h"
 #include "SDNodeDbgValue.h"
 #include "llvm/ADT/APFloat.h"
@@ -11583,6 +11584,8 @@ void SelectionDAGISel::LowerArguments(const Function &F) {
   if (F.hasFnAttribute(Attribute::Naked))
     return;
 
+  printf("dagbuild 1 ins len %zu\n", Ins.size());
+  
   if (!FuncInfo->CanLowerReturn) {
     // Put in an sret pointer parameter before all the other parameters.
     MVT ValueVT = TLI->getPointerTy(DL, DL.getAllocaAddrSpace());
@@ -11595,6 +11598,7 @@ void SelectionDAGISel::LowerArguments(const Function &F) {
     Ins.push_back(RetArg);
   }
 
+  printf("dagbuild 2 ins len %zu\n", Ins.size());
   // Look for stores of arguments to static allocas. Mark such arguments with a
   // flag to ask the target to give us the memory location of that argument if
   // available.
@@ -11602,8 +11606,12 @@ void SelectionDAGISel::LowerArguments(const Function &F) {
   findArgumentCopyElisionCandidates(DL, FuncInfo.get(),
                                     ArgCopyElisionCandidates);
 
+  printf("dagbuild 3 ins len %zu\n", Ins.size());
+
   // Set up the incoming argument description vector.
   for (const Argument &Arg : F.args()) {
+    // So, inside this loop is where things get broken up
+    printf("dagbuild loop start ins len %zu\n", Ins.size());
     unsigned ArgNo = Arg.getArgNo();
     SmallVector<EVT, 4> ValueVTs;
     ComputeValueVTs(*TLI, DAG.getDataLayout(), Arg.getType(), ValueVTs);
@@ -11723,6 +11731,10 @@ void SelectionDAGISel::LowerArguments(const Function &F) {
           *CurDAG->getContext(), F.getCallingConv(), VT);
       unsigned NumRegs = TLI->getNumRegistersForCallingConv(
           *CurDAG->getContext(), F.getCallingConv(), VT);
+      // std::cout << "numregs " << NumRegs << " VT " 
+      // ;
+      auto foo = EVT(RegisterVT).getEVTString();
+      printf("numregs %d name %.*s\n", NumRegs, (int)foo.length(), foo.data());
       for (unsigned i = 0; i != NumRegs; ++i) {
         // For scalable vectors, use the minimum size; individual targets
         // are responsible for handling scalable vector arguments and
@@ -11739,11 +11751,14 @@ void SelectionDAGISel::LowerArguments(const Function &F) {
             MyFlags.Flags.setSplitEnd();
         }
         Ins.push_back(MyFlags);
+        printf("dagbuild push back len %zu\n", Ins.size());
       }
       if (NeedsRegBlock && Value == NumValues - 1)
         Ins[Ins.size() - 1].Flags.setInConsecutiveRegsLast();
       PartBase += VT.getStoreSize().getKnownMinValue();
     }
+
+    printf("dagbuild loop ins len %zu\n", Ins.size());
   }
 
   // Call the target to set up the argument values.
