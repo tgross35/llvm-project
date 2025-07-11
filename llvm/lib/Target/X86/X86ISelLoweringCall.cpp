@@ -1724,12 +1724,18 @@ SDValue X86TargetLowering::LowerFormalArguments(
   for (auto &Arg  : ArgLocs) {
     fprintf(stderr, "    arg flag offset: %lu\n", Arg.getLocMemOffset());
   }
+  if (ArgLocs.size() == 0) {
+    fprintf(stderr, "    args empty\n");
+  }
+  fprintf(stderr, "    ins: %zu\n", Ins.size());
 
   // Allocate shadow area for Win64.
   if (IsWin64)
     CCInfo.AllocateStack(32, Align(8));
 
   CCInfo.AnalyzeArguments(Ins, CC_X86);
+
+  // CCInfo.ensureMaxAlignment(Align Alignment)
 
   for (auto &Arg  : ArgLocs) {
     fprintf(stderr, "    arg flag offset 2: %lu\n", Arg.getLocMemOffset());

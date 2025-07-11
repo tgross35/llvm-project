@@ -11677,13 +11677,12 @@ void SelectionDAGISel::LowerArguments(const Function &F) {
         Flags.setByVal();
       }
 
-      fprintf(stderr, "    middle A block 2 %d\n", Value);
       // Certain targets (such as MIPS), may have a different ABI alignment
       // for a type depending on the context. Give the target a chance to
       // specify the alignment it wants.
       const Align OriginalAlignment(
           TLI->getABIAlignmentForCallingConv(ArgTy, DL));
-      eprint("    argno %d val %d align %lu\n", ArgNo, Value, OriginalAlignment.value());
+      eprint("  argno %d val %d align %lu\n", ArgNo, Value, OriginalAlignment.value());
       Flags.setOrigAlign(OriginalAlignment);
 
       Align MemAlign;
