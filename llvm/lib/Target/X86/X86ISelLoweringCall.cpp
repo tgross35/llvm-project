@@ -1417,11 +1417,13 @@ X86TargetLowering::LowerMemArgument(SDValue Chain, CallingConv::ID CallConv,
   if (Subtarget.isTargetWindowsMSVC() && !Subtarget.is64Bit() &&
       ValVT != MVT::f80)
     Alignment = MaybeAlign(4);
+  Alignment = MaybeAlign(Flags.getNonZeroMemAlign());
   SDValue FIN = DAG.getFrameIndex(FI, PtrVT);
   SDValue Val = DAG.getLoad(
       ValVT, dl, Chain, FIN,
       MachinePointerInfo::getFixedStack(DAG.getMachineFunction(), FI),
       Alignment);
+  fprintf(stderr, "    lower mem align: %ld\n", Alignment.valueOrOne().value());
   return ExtendedInMem
              ? (VA.getValVT().isVector()
                     ? DAG.getNode(ISD::SCALAR_TO_VECTOR, dl, VA.getValVT(), Val)
@@ -1695,7 +1697,6 @@ SDValue X86TargetLowering::LowerFormalArguments(
     SelectionDAG &DAG, SmallVectorImpl<SDValue> &InVals) const {
   MachineFunction &MF = DAG.getMachineFunction();
   X86MachineFunctionInfo *FuncInfo = MF.getInfo<X86MachineFunctionInfo>();
-
   const Function &F = MF.getFunction();
   if (F.hasExternalLinkage() && Subtarget.isTargetCygMing() &&
       F.getName() == "main")
@@ -1730,6 +1731,7 @@ SDValue X86TargetLowering::LowerFormalArguments(
   assert(isSortedByValueNo(ArgLocs) &&
          "Argument Location list must be sorted before lowering");
 
+  fprintf(stderr, "    lowering %zu args\n", ArgLocs.size());
   SDValue ArgValue;
   for (unsigned I = 0, InsIndex = 0, E = ArgLocs.size(); I != E;
        ++I, ++InsIndex) {
@@ -1737,6 +1739,7 @@ SDValue X86TargetLowering::LowerFormalArguments(
     CCValAssign &VA = ArgLocs[I];
 
     if (VA.isRegLoc()) {
+      fprintf(stderr, "    lower: isregloc\n");
       EVT RegVT = VA.getLocVT();
       if (VA.needsCustom()) {
         assert(
@@ -1818,6 +1821,7 @@ SDValue X86TargetLowering::LowerFormalArguments(
           ArgValue = DAG.getNode(ISD::TRUNCATE, dl, VA.getValVT(), ArgValue);
       }
     } else {
+      fprintf(stderr, "    lower: ismemloc\n");
       assert(VA.isMemLoc());
       ArgValue =
           LowerMemArgument(Chain, CallConv, Ins, dl, DAG, VA, MFI, InsIndex);

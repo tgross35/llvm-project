@@ -1,26 +1,26 @@
-define void @store_32(i32 %a, ptr %p) {
-entry:
-  store i32 %a, ptr %p
-  ret void
-}
+; define void @store_32(i32 %a, ptr %p) {
+; entry:
+;   store i32 %a, ptr %p
+;   ret void
+; }
 
-define i32 @load_32(ptr %p) {
-entry:
-  %0 = load i32, ptr %p, align 16
-  ret i32 %0
-}
+; define i32 @load_32(ptr %p) {
+; entry:
+;   %0 = load i32, ptr %p, align 16
+;   ret i32 %0
+; }
 
-define void @store_64(i64 %a, ptr %p) {
-entry:
-  store i64 %a, ptr %p
-  ret void
-}
+; define void @store_64(i64 %a, ptr %p) {
+; entry:
+;   store i64 %a, ptr %p
+;   ret void
+; }
 
-define i64 @load_64(ptr %p) {
-entry:
-  %0 = load i64, ptr %p, align 16
-  ret i64 %0
-}
+; define i64 @load_64(ptr %p) {
+; entry:
+;   %0 = load i64, ptr %p, align 16
+;   ret i64 %0
+; }
 
 define void @store_128(i128 %a, ptr %p) {
 entry:

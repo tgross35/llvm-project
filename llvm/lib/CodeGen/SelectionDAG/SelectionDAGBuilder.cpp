@@ -106,6 +106,8 @@
 #include <optional>
 #include <tuple>
 
+#define eprint(...) fprintf(stderr, __VA_ARGS__)
+
 using namespace llvm;
 using namespace PatternMatch;
 using namespace SwitchCG;
@@ -11604,6 +11606,7 @@ void SelectionDAGISel::LowerArguments(const Function &F) {
 
   // Set up the incoming argument description vector.
   for (const Argument &Arg : F.args()) {
+    fprintf(stderr, "    start block 1\n");
     unsigned ArgNo = Arg.getArgNo();
     SmallVector<EVT, 4> ValueVTs;
     ComputeValueVTs(*TLI, DAG.getDataLayout(), Arg.getType(), ValueVTs);
@@ -11679,7 +11682,7 @@ void SelectionDAGISel::LowerArguments(const Function &F) {
       // specify the alignment it wants.
       const Align OriginalAlignment(
           TLI->getABIAlignmentForCallingConv(ArgTy, DL));
-      printf("argno %d val %d align %lld\n", ArgNo, Value, OriginalAlignment.value());
+      eprint("argno %d val %d align %lu\n", ArgNo, Value, OriginalAlignment.value());
       Flags.setOrigAlign(OriginalAlignment);
 
       Align MemAlign;
@@ -11709,6 +11712,7 @@ void SelectionDAGISel::LowerArguments(const Function &F) {
       } else {
         MemAlign = OriginalAlignment;
       }
+      eprint("    memalign %lu\n", MemAlign.value());
       Flags.setMemAlign(MemAlign);
 
       if (Arg.hasAttribute(Attribute::Nest))
@@ -11731,6 +11735,15 @@ void SelectionDAGISel::LowerArguments(const Function &F) {
         ISD::InputArg MyFlags(
             Flags, RegisterVT, VT, isArgValueUsed, ArgNo,
             PartBase + i * RegisterVT.getStoreSize().getKnownMinValue());
+        eprint("    arg %d, aligns: %lu %lu inreg %d byval %d byref %d isnest %d\n", i,
+               MyFlags.Flags.getNonZeroOrigAlign().value(),
+               MyFlags.Flags.getNonZeroMemAlign().value(),
+               MyFlags.Flags.isInReg(),
+               MyFlags.Flags.isByVal(),
+               MyFlags.Flags.isByRef(),
+               MyFlags.Flags.isNest()
+        );
+        
         if (NumRegs > 1 && i == 0)
           MyFlags.Flags.setSplit();
         // if it isn't first piece, alignment must be 1
@@ -11739,14 +11752,24 @@ void SelectionDAGISel::LowerArguments(const Function &F) {
           if (i == NumRegs - 1)
             MyFlags.Flags.setSplitEnd();
         }
+        eprint("    arg %d, fixed aligns: %lu %lu inreg %d byval %d byref %d isnest %d\n", i,
+               MyFlags.Flags.getNonZeroOrigAlign().value(),
+               MyFlags.Flags.getNonZeroMemAlign().value(),
+               MyFlags.Flags.isInReg(),
+               MyFlags.Flags.isByVal(),
+               MyFlags.Flags.isByRef(),
+               MyFlags.Flags.isNest()
+        );
         Ins.push_back(MyFlags);
       }
       if (NeedsRegBlock && Value == NumValues - 1)
         Ins[Ins.size() - 1].Flags.setInConsecutiveRegsLast();
       PartBase += VT.getStoreSize().getKnownMinValue();
+      fprintf(stderr, "    end block 2\n");
     }
+    fprintf(stderr, "    end block 1\n");
   }
-
+  fprintf(stderr, "    starting formal lower\n");
   // Call the target to set up the argument values.
   SmallVector<SDValue, 8> InVals;
   SDValue NewRoot = TLI->LowerFormalArguments(
