@@ -823,9 +823,11 @@ def CC_X86_32_Common : CallingConv<[
   CCIfNotVarArg<CCIfInReg<CCIfType<[f16], CCAssignToReg<[XMM0,XMM1,XMM2]>>>>,
 
   CCIfType<[f16], CCAssignToStack<4, 4>>,
-
+  
   // Integer/Float values get stored in stack slots that are 4 bytes in
   // size and 4-byte aligned.
+  // CCIfType<[i32, f32], CCIf<"ArgFlags.getNonZeroOrigAlign().value() != 4",
+  //                           CCCustom<"CC_X86_32_VectorCall">>>,
   CCIfType<[i32, f32], CCAssignToStack<4, 4>>,
 
   // Doubles get 8-byte slots that are 4-byte aligned.
@@ -859,6 +861,9 @@ def CC_X86_32_C : CallingConv<[
   // The 'nest' parameter, if any, is passed in ECX.
   CCIfNest<CCAssignToReg<[ECX]>>,
 
+  CCIfType<[i32],
+           CCIfConsecutiveRegs<CCCustom<"CC_X86_32_I128">>>,
+  
   // On swifttailcc pass swiftself in ECX.
   CCIfCC<"CallingConv::SwiftTail",
          CCIfSwiftSelf<CCIfType<[i32], CCAssignToReg<[ECX]>>>>,

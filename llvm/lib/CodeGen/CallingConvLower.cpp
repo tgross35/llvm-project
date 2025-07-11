@@ -85,12 +85,32 @@ void
 CCState::AnalyzeFormalArguments(const SmallVectorImpl<ISD::InputArg> &Ins,
                                 CCAssignFn Fn) {
   unsigned NumArgs = Ins.size();
+  fprintf(stderr, "    formal %u args\n", NumArgs);
+
+  for (unsigned I = 0; I < Locs.size(); ++I) {
+    auto Loc = Locs[I];
+    fprintf(stderr, "    pre loc offset: %llu\n",
+            Loc.getLocMemOffset()
+    );
+  }
 
   for (unsigned i = 0; i != NumArgs; ++i) {
     MVT ArgVT = Ins[i].VT;
     ISD::ArgFlagsTy ArgFlags = Ins[i].Flags;
+    fprintf(stderr, "    pre analyze vt size: %llu, memalign %llu origalign %llu\n",
+          ArgVT.getSizeInBits().getFixedValue(),
+          ArgFlags.getNonZeroMemAlign().value(),
+          ArgFlags.getNonZeroOrigAlign().value()
+    );
     if (Fn(i, ArgVT, ArgVT, CCValAssign::Full, ArgFlags, *this))
       report_fatal_error("unable to allocate function argument #" + Twine(i));
+  }
+
+  for (unsigned I = 0; I < Locs.size(); ++I) {
+    auto Loc = Locs[I];
+    fprintf(stderr, "    post loc offset: %llu\n",
+            Loc.getLocMemOffset()
+    );
   }
 }
 

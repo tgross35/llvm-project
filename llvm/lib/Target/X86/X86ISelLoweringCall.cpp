@@ -1424,13 +1424,13 @@ X86TargetLowering::LowerMemArgument(SDValue Chain, CallingConv::ID CallConv,
   if (Subtarget.isTargetWindowsMSVC() && !Subtarget.is64Bit() &&
       ValVT != MVT::f80)
     Alignment = MaybeAlign(4);
-  Alignment = MaybeAlign(Flags.getNonZeroMemAlign());
+  // Alignment = MaybeAlign(Flags.getNonZeroMemAlign());
   SDValue FIN = DAG.getFrameIndex(FI, PtrVT);
   SDValue Val = DAG.getLoad(
       ValVT, dl, Chain, FIN,
       MachinePointerInfo::getFixedStack(DAG.getMachineFunction(), FI),
       Alignment);
-  fprintf(stderr, "    lower mem align: %ld\n", Alignment.valueOrOne().value());
+  // fprintf(stderr, "    lower mem align: %ld\n", Alignment.valueOrOne().value());
   return ExtendedInMem
              ? (VA.getValVT().isVector()
                     ? DAG.getNode(ISD::SCALAR_TO_VECTOR, dl, VA.getValVT(), Val)
