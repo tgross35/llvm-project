@@ -4,14 +4,9 @@
 	.p2align	4
 	.type	store_128,@function
 store_128:                              # @store_128
-	.cfi_startproc
 # %bb.0:                                # %entry
 	pushl	%edi
-	.cfi_def_cfa_offset 8
 	pushl	%esi
-	.cfi_def_cfa_offset 12
-	.cfi_offset %esi, -12
-	.cfi_offset %edi, -8
 	movl	12(%esp), %eax
 	movl	16(%esp), %ecx
 	movl	20(%esp), %edx
@@ -22,26 +17,40 @@ store_128:                              # @store_128
 	movl	%ecx, 4(%edi)
 	movl	%eax, (%edi)
 	popl	%esi
-	.cfi_def_cfa_offset 8
 	popl	%edi
-	.cfi_def_cfa_offset 4
 	retl
 .Lfunc_end0:
 	.size	store_128, .Lfunc_end0-store_128
-	.cfi_endproc
+                                        # -- End function
+	.globl	store_1282                      # -- Begin function store_1282
+	.p2align	4
+	.type	store_1282,@function
+store_1282:                             # @store_1282
+# %bb.0:                                # %entry
+	pushl	%edi
+	pushl	%esi
+	movl	16(%esp), %eax
+	movl	20(%esp), %ecx
+	movl	24(%esp), %edx
+	movl	28(%esp), %esi
+	movl	32(%esp), %edi
+	movl	%esi, 12(%edi)
+	movl	%edx, 8(%edi)
+	movl	%ecx, 4(%edi)
+	movl	%eax, (%edi)
+	popl	%esi
+	popl	%edi
+	retl
+.Lfunc_end1:
+	.size	store_1282, .Lfunc_end1-store_1282
                                         # -- End function
 	.globl	load_128                        # -- Begin function load_128
 	.p2align	4
 	.type	load_128,@function
 load_128:                               # @load_128
-	.cfi_startproc
 # %bb.0:                                # %entry
 	pushl	%edi
-	.cfi_def_cfa_offset 8
 	pushl	%esi
-	.cfi_def_cfa_offset 12
-	.cfi_offset %esi, -12
-	.cfi_offset %edi, -8
 	movl	12(%esp), %eax
 	movl	16(%esp), %ecx
 	movl	(%ecx), %edx
@@ -53,12 +62,9 @@ load_128:                               # @load_128
 	movl	%esi, 4(%eax)
 	movl	%edx, (%eax)
 	popl	%esi
-	.cfi_def_cfa_offset 8
 	popl	%edi
-	.cfi_def_cfa_offset 4
 	retl	$4
-.Lfunc_end1:
-	.size	load_128, .Lfunc_end1-load_128
-	.cfi_endproc
+.Lfunc_end2:
+	.size	load_128, .Lfunc_end2-load_128
                                         # -- End function
 	.section	".note.GNU-stack","",@progbits

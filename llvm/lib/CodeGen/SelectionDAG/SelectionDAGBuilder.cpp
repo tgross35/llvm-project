@@ -11576,6 +11576,7 @@ static void tryToElideArgumentCopy(
 }
 
 void SelectionDAGISel::LowerArguments(const Function &F) {
+  fprintf(stderr, "\nlower call\n");
   SelectionDAG &DAG = SDB->DAG;
   SDLoc dl = SDB->getCurSDLoc();
   const DataLayout &DL = DAG.getDataLayout();
@@ -11606,7 +11607,6 @@ void SelectionDAGISel::LowerArguments(const Function &F) {
 
   // Set up the incoming argument description vector.
   for (const Argument &Arg : F.args()) {
-    fprintf(stderr, "    start block 1\n");
     unsigned ArgNo = Arg.getArgNo();
     SmallVector<EVT, 4> ValueVTs;
     ComputeValueVTs(*TLI, DAG.getDataLayout(), Arg.getType(), ValueVTs);
@@ -11677,12 +11677,13 @@ void SelectionDAGISel::LowerArguments(const Function &F) {
         Flags.setByVal();
       }
 
+      fprintf(stderr, "    middle A block 2 %d\n", Value);
       // Certain targets (such as MIPS), may have a different ABI alignment
       // for a type depending on the context. Give the target a chance to
       // specify the alignment it wants.
       const Align OriginalAlignment(
           TLI->getABIAlignmentForCallingConv(ArgTy, DL));
-      eprint("argno %d val %d align %lu\n", ArgNo, Value, OriginalAlignment.value());
+      eprint("    argno %d val %d align %lu\n", ArgNo, Value, OriginalAlignment.value());
       Flags.setOrigAlign(OriginalAlignment);
 
       Align MemAlign;
@@ -11765,11 +11766,9 @@ void SelectionDAGISel::LowerArguments(const Function &F) {
       if (NeedsRegBlock && Value == NumValues - 1)
         Ins[Ins.size() - 1].Flags.setInConsecutiveRegsLast();
       PartBase += VT.getStoreSize().getKnownMinValue();
-      fprintf(stderr, "    end block 2\n");
     }
-    fprintf(stderr, "    end block 1\n");
   }
-  fprintf(stderr, "    starting formal lower\n");
+  fprintf(stderr, "  starting formal lower\n");
   // Call the target to set up the argument values.
   SmallVector<SDValue, 8> InVals;
   SDValue NewRoot = TLI->LowerFormalArguments(
