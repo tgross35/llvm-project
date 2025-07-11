@@ -1403,6 +1403,13 @@ X86TargetLowering::LowerMemArgument(SDValue Chain, CallingConv::ID CallConv,
     }
   }
 
+  // At this point, if we follow the original alignment we will get correctly aligned values
+  fprintf(stderr, "    size %lu offset %lu ins mem align %lu orig align %lu\n",
+          ValVT.getSizeInBits().getFixedValue(),
+          VA.getLocMemOffset(),
+          Flags.getNonZeroMemAlign().value(),
+          Flags.getNonZeroOrigAlign().value()
+        );
   int FI = MFI.CreateFixedObject(ValVT.getSizeInBits() / 8,
                                  VA.getLocMemOffset(), isImmutable);
 
@@ -1714,11 +1721,19 @@ SDValue X86TargetLowering::LowerFormalArguments(
   SmallVector<CCValAssign, 16> ArgLocs;
   CCState CCInfo(CallConv, IsVarArg, MF, ArgLocs, *DAG.getContext());
 
+  for (auto &Arg  : ArgLocs) {
+    fprintf(stderr, "    arg flag offset: %lu\n", Arg.getLocMemOffset());
+  }
+
   // Allocate shadow area for Win64.
   if (IsWin64)
     CCInfo.AllocateStack(32, Align(8));
 
   CCInfo.AnalyzeArguments(Ins, CC_X86);
+
+  for (auto &Arg  : ArgLocs) {
+    fprintf(stderr, "    arg flag offset 2: %lu\n", Arg.getLocMemOffset());
+  }
 
   // In vectorcall calling convention a second pass is required for the HVA
   // types.
