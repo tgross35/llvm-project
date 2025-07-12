@@ -22,6 +22,8 @@ def isOSWindows : RuntimeLibcallPredicate<"TT.isOSWindows()">;
 def darwinHasSinCosStret : RuntimeLibcallPredicate<"darwinHasSinCosStret(TT)">;
 def darwinHasExp10 : RuntimeLibcallPredicate<"darwinHasExp10(TT)">;
 def hasSinCos : RuntimeLibcallPredicate<"hasSinCos(TT)">;
+def f128LibmShouldUseLongDouble
+    : RuntimeLibcallPredicate<"f128LibmShouldUseLongDouble(TT)">;
 
 //--------------------------------------------------------------------
 // Declare all kinds of used libcalls
@@ -379,7 +381,7 @@ multiclass LibmLibcallImpls<string libcall_basename = !toupper(NAME),
 
 multiclass LibmF128AsLongDoubleImpls<string libcall_basename = !toupper(NAME),
                                      string rtbasename = !strconcat(NAME, "X")> {
-  def NAME#"_ld128" 
+  def NAME#"_ld128"
       : RuntimeLibcallImpl<!cast<RuntimeLibcall>(libcall_basename#"_F128"),
                            !subst("X", "l", rtbasename)>;
 }
@@ -822,7 +824,7 @@ defset list<RuntimeLibcallImpl> LibmF128AsLongDoubleLibcalls = {
   defm pow : LibmF128AsLongDoubleImpls;
   defm fmin : LibmF128AsLongDoubleImpls;
   defm fmax : LibmF128AsLongDoubleImpls;
-  defm fmod : LibmF128AsLongDoubleImpls;
+  defm fmod : LibmF128AsLongDoubleImpls<"REM">;
   defm sqrt : LibmF128AsLongDoubleImpls;
   defm ceil : LibmF128AsLongDoubleImpls;
   defm floor : LibmF128AsLongDoubleImpls;
@@ -839,8 +841,8 @@ defset list<RuntimeLibcallImpl> LibmF128AsLongDoubleLibcalls = {
   defm cbrt : LibmF128AsLongDoubleImpls;
   defm fminimum : LibmF128AsLongDoubleImpls;
   defm fmaximum : LibmF128AsLongDoubleImpls;
-  defm fminimum : LibmF128AsLongDoubleImpls;
-  defm fmaximum : LibmF128AsLongDoubleImpls;
+  defm fminimum_num : LibmF128AsLongDoubleImpls;
+  defm fmaximum_num : LibmF128AsLongDoubleImpls;
   defm asin : LibmF128AsLongDoubleImpls;
   defm acos : LibmF128AsLongDoubleImpls;
   defm atan : LibmF128AsLongDoubleImpls;
@@ -854,13 +856,13 @@ defset list<RuntimeLibcallImpl> LibmF128AsLongDoubleLibcalls = {
 }
 
 defset list<RuntimeLibcallImpl> LibmF128AsLongDoubleFiniteLibcalls = {
-  defm __log_ld128_finite : LibmF128AsLongDoubleImpls<LOG_FINITE_F128, "__logl_finite">;
-  defm __log2_ld128_finite : LibmF128AsLongDoubleImpls<LOG2_FINITE_F128, "__log2l_finite">;
-  defm __log10_ld128_finite : LibmF128AsLongDoubleImpls<LOG10_FINITE_F128, "__log10l_finite">;
-  defm __exp_ld128_finite : LibmF128AsLongDoubleImpls<EXP_FINITE_F128, "__expl_finite">;
-  defm __exp2_ld128_finite : LibmF128AsLongDoubleImpls<EXP2_FINITE_F128, "__exp2l_finite">;
-  defm __exp10_ld128_finite : LibmF128AsLongDoubleImpls<EXP10_FINITE_F128, "__exp10l_finite">;
-  defm __pow_ld128_finite : LibmF128AsLongDoubleImpls<POW_FINITE_F128, "__powl_finite">;
+  defm __log_finite : LibmF128AsLongDoubleImpls<"LOG_FINITE", "__logX_finite">;
+  defm __log2_finite : LibmF128AsLongDoubleImpls<"LOG2_FINITE", "__log2X_finite">;
+  defm __log10_finite : LibmF128AsLongDoubleImpls<"LOG10_FINITE", "__log10X_finite">;
+  defm __exp_finite : LibmF128AsLongDoubleImpls<"EXP_FINITE", "__expX_finite">;
+  defm __exp2_finite : LibmF128AsLongDoubleImpls<"EXP2_FINITE", "__exp2X_finite">;
+  defm __exp10_finite : LibmF128AsLongDoubleImpls<"EXP10_FINITE", "__exp10X_finite">;
+  defm __pow_finite : LibmF128AsLongDoubleImpls<"POW_FINITE", "__powX_finite">;
 }
 
 //===----------------------------------------------------------------------===//

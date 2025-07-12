@@ -114,12 +114,12 @@ static void setLongDoubleIsF128Libm(RuntimeLibcallsInfo &Info,
   Info.setLibcallImpl(RTLIB::MODF_F128, RTLIB::modf_ld128);
 
   if (FiniteOnlyFuncs) {
-    Info.setLibcallImpl(RTLIB::LOG_FINITE_F128, RTLIB::__log_ld128_finite);
-    Info.setLibcallImpl(RTLIB::LOG2_FINITE_F128, RTLIB::__log2_ld128_finite);
-    Info.setLibcallImpl(RTLIB::LOG10_FINITE_F128, RTLIB::__log10_ld128_finite);
-    Info.setLibcallImpl(RTLIB::EXP_FINITE_F128, RTLIB::__exp_ld128_finite);
-    Info.setLibcallImpl(RTLIB::EXP2_FINITE_F128, RTLIB::__exp2_ld128_finite);
-    Info.setLibcallImpl(RTLIB::POW_FINITE_F128, RTLIB::__pow_ld128_finite);
+    Info.setLibcallImpl(RTLIB::LOG_FINITE_F128, RTLIB::__log_finite_ld128);
+    Info.setLibcallImpl(RTLIB::LOG2_FINITE_F128, RTLIB::__log2_finite_ld128);
+    Info.setLibcallImpl(RTLIB::LOG10_FINITE_F128, RTLIB::__log10_finite_ld128);
+    Info.setLibcallImpl(RTLIB::EXP_FINITE_F128, RTLIB::__exp_finite_ld128);
+    Info.setLibcallImpl(RTLIB::EXP2_FINITE_F128, RTLIB::__exp2_finite_ld128);
+    Info.setLibcallImpl(RTLIB::POW_FINITE_F128, RTLIB::__pow_finite_ld128);
   } else {
     Info.setLibcallImpl(RTLIB::LOG_FINITE_F128, RTLIB::Unsupported);
     Info.setLibcallImpl(RTLIB::LOG2_FINITE_F128, RTLIB::Unsupported);

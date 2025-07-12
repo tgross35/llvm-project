@@ -183,7 +183,7 @@ TargetLowering::makeLibCall(SelectionDAG &DAG, RTLIB::Libcall LC, EVT RetVT,
 
   const char *LibcallName = getLibcallName(LC);
   if (LC == RTLIB::UNKNOWN_LIBCALL || !LibcallName)
-    reportFatalInternalError("unsupported library call operation");
+    reportFatalInternalError("unsupported library call operation: id " + Twine(LC));
 
   SDValue Callee =
       DAG.getExternalSymbol(LibcallName, getPointerTy(DAG.getDataLayout()));
