@@ -297,10 +297,19 @@ void RuntimeLibcallEmitter::emitGetRuntimeLibcallEnum(raw_ostream &OS) const {
   }
 
   OS << "  NumLibcallImpls = " << RuntimeLibcallImplDefList.size() + 1
-     << "\n};\n"
+     << "\n};\n\n"
+     << "const char *const RuntimeLibcallsInfo::"
+        "LibCallDisplayNames[UNKNOWN_LIBCALL + 1] = {\n";
+  
+  for (const RuntimeLibcall &LibCall : RuntimeLibcallDefList) {
+    StringRef Name = LibCall.getName();
+    OS << "  \"" << Name << "\",\n";
+  }
+  
+  OS << "}\n"
         "} // End namespace RTLIB\n"
         "} // End namespace llvm\n"
-        "#endif\n\n";
+        "#endif // GET_RUNTIME_LIBCALL_ENUM\n\n";
 }
 
 void RuntimeLibcallEmitter::emitGetInitRuntimeLibcallNames(

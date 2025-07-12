@@ -74,6 +74,11 @@ struct RuntimeLibcallsInfo {
     LibcallImpls[Call] = Impl;
   }
 
+  /// For debugging purposes, get the name of 
+  const char *getLibcallDispName(RTLIB::Libcall Call) const {
+    return LibcallDisplayNames[std::min(Call, RTLIB::UNKNOWN_LIBCALL)];
+  }
+
   /// Get the libcall routine name for the specified libcall.
   // FIXME: This should be removed. Only LibcallImpl should have a name.
   const char *getLibcallName(RTLIB::Libcall Call) const {
@@ -128,6 +133,8 @@ struct RuntimeLibcallsInfo {
   }
 
 private:
+  static const char *const
+      LibcallDisplayNames[RTLIB::UNKNOWN_LIBCALL + 1];
   static const RTLIB::LibcallImpl
       DefaultLibcallImpls[RTLIB::UNKNOWN_LIBCALL + 1];
 
