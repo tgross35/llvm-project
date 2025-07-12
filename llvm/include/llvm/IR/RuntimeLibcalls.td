@@ -377,6 +377,13 @@ multiclass LibmLibcallImpls<string libcall_basename = !toupper(NAME),
                            !subst("X", "l", rtbasename)>;
 }
 
+multiclass LibmF128AsLongDoubleImpls<string libcall_basename = !toupper(NAME),
+                                     string rtbasename = !strconcat(NAME, "X")> {
+  def NAME#"_ld128" 
+      : RuntimeLibcallImpl<!cast<RuntimeLibcall>(libcall_basename#"_F128"),
+                           !subst("X", "l", rtbasename)>;
+}
+
 // AArch64 calls
 def SC_MEMCPY : RuntimeLibcall;
 def SC_MEMMOVE : RuntimeLibcall;
@@ -704,7 +711,6 @@ def __riscv_flush_icache : RuntimeLibcallImpl<RISCV_FLUSH_ICACHE>;
 // libm
 //--------------------------------------------------------------------
 
-<<<<<<< HEAD
 defm fmod : LibmLibcallImpls<"REM">;
 defm fma : LibmLibcallImpls;
 defm sqrt : LibmLibcallImpls;
@@ -802,59 +808,59 @@ def _Unwind_SjLj_Resume : RuntimeLibcallImpl<UNWIND_RESUME>;
 
 // Impls for treating `fp128` as `long double`
 defset list<RuntimeLibcallImpl> LibmF128AsLongDoubleLibcalls = {
-  def log_ld128 : RuntimeLibcallImpl<LOG_F128, "logl">;
-  def log2_ld128 : RuntimeLibcallImpl<LOG2_F128, "log2l">;
-  def log10_ld128 : RuntimeLibcallImpl<LOG10_F128, "log10l">;
-  def exp_ld128 : RuntimeLibcallImpl<EXP_F128, "expl">;
-  def exp2_ld128 : RuntimeLibcallImpl<EXP2_F128, "exp2l">;
-  def exp10_ld128 : RuntimeLibcallImpl<EXP10_F128, "exp10l">;
-  def sin_ld128 : RuntimeLibcallImpl<SIN_F128, "sinl">;
-  def cos_ld128 : RuntimeLibcallImpl<COS_F128, "cosl">;
-  def tan_ld128 : RuntimeLibcallImpl<TAN_F128, "tanl">;
-  def tanh_ld128 : RuntimeLibcallImpl<TANH_F128, "tanhl">;
-  def sincos_ld128 : RuntimeLibcallImpl<SINCOS_F128, "sincosl">;
-  def pow_ld128 : RuntimeLibcallImpl<POW_F128, "powl">;
-  def fmin_ld128 : RuntimeLibcallImpl<FMIN_F128, "fminl">;
-  def fmax_ld128 : RuntimeLibcallImpl<FMAX_F128, "fmaxl">;
-  def fmod_ld128 : RuntimeLibcallImpl<REM_F128, "fmodl">;
-  def sqrt_ld128 : RuntimeLibcallImpl<SQRT_F128, "sqrtl">;
-  def ceil_ld128 : RuntimeLibcallImpl<CEIL_F128, "ceill">;
-  def floor_ld128 : RuntimeLibcallImpl<FLOOR_F128, "floorl">;
-  def trunc_ld128 : RuntimeLibcallImpl<TRUNC_F128, "truncl">;
-  def round_ld128 : RuntimeLibcallImpl<ROUND_F128, "roundl">;
-  def lround_ld128 : RuntimeLibcallImpl<LROUND_F128, "lroundl">;
-  def llround_ld128 : RuntimeLibcallImpl<LLROUND_F128, "llroundl">;
-  def rint_ld128 : RuntimeLibcallImpl<RINT_F128, "rintl">;
-  def lrint_ld128 : RuntimeLibcallImpl<LRINT_F128, "lrintl">;
-  def llrint_ld128 : RuntimeLibcallImpl<LLRINT_F128, "llrintl">;
-  def nearbyint_ld128 : RuntimeLibcallImpl<NEARBYINT_F128, "nearbyintl">;
-  def fma_ld128 : RuntimeLibcallImpl<FMA_F128, "fmal">;
-  def frexp_ld128 : RuntimeLibcallImpl<FREXP_F128, "frexpl">;
-  def cbrt_ld128 : RuntimeLibcallImpl<CBRT_F128, "cbrtl">;
-  def fminimum_ld128 : RuntimeLibcallImpl<FMINIMUM_F128, "fminimuml">;
-  def fmaximum_ld128 : RuntimeLibcallImpl<FMAXIMUM_F128, "fmaximuml">;
-  def fminimum_num_ld128 : RuntimeLibcallImpl<FMINIMUM_NUM_F128, "fminimuml">;
-  def fmaximum_num_ld128 : RuntimeLibcallImpl<FMAXIMUM_NUM_F128, "fmaximuml">;
-  def asin_ld128 : RuntimeLibcallImpl<ASIN_F128, "asinl">;
-  def acos_ld128 : RuntimeLibcallImpl<ACOS_F128, "acosl">;
-  def atan_ld128 : RuntimeLibcallImpl<ATAN_F128, "atanl">;
-  def atan2_ld128 : RuntimeLibcallImpl<ATAN2_F128, "atan2l">;
-  def ldexp_ld128 : RuntimeLibcallImpl<LDEXP_F128, "ldexpl">;
-  def roundeven_ld128 : RuntimeLibcallImpl<ROUNDEVEN_F128, "roundevenl">;
-  def modf_ld128 : RuntimeLibcallImpl<MODF_F128, "modfl">;
-  def sinh_ld128 : RuntimeLibcallImpl<SINH_F128, "sinhl">;
-  def cosh_ld128 : RuntimeLibcallImpl<COSH_F128, "coshl">;
-  def copysign_ld128 : RuntimeLibcallImpl<COPYSIGN_F128, "copysignl">;
+  defm log : LibmF128AsLongDoubleImpls;
+  defm log2 : LibmF128AsLongDoubleImpls;
+  defm log10 : LibmF128AsLongDoubleImpls;
+  defm exp : LibmF128AsLongDoubleImpls;
+  defm exp2 : LibmF128AsLongDoubleImpls;
+  defm exp10 : LibmF128AsLongDoubleImpls;
+  defm sin : LibmF128AsLongDoubleImpls;
+  defm cos : LibmF128AsLongDoubleImpls;
+  defm tan : LibmF128AsLongDoubleImpls;
+  defm tanh : LibmF128AsLongDoubleImpls;
+  defm sincos : LibmF128AsLongDoubleImpls;
+  defm pow : LibmF128AsLongDoubleImpls;
+  defm fmin : LibmF128AsLongDoubleImpls;
+  defm fmax : LibmF128AsLongDoubleImpls;
+  defm fmod : LibmF128AsLongDoubleImpls;
+  defm sqrt : LibmF128AsLongDoubleImpls;
+  defm ceil : LibmF128AsLongDoubleImpls;
+  defm floor : LibmF128AsLongDoubleImpls;
+  defm trunc : LibmF128AsLongDoubleImpls;
+  defm round : LibmF128AsLongDoubleImpls;
+  defm lround : LibmF128AsLongDoubleImpls;
+  defm llround : LibmF128AsLongDoubleImpls;
+  defm rint : LibmF128AsLongDoubleImpls;
+  defm lrint : LibmF128AsLongDoubleImpls;
+  defm llrint : LibmF128AsLongDoubleImpls;
+  defm nearbyint : LibmF128AsLongDoubleImpls;
+  defm fma : LibmF128AsLongDoubleImpls;
+  defm frexp : LibmF128AsLongDoubleImpls;
+  defm cbrt : LibmF128AsLongDoubleImpls;
+  defm fminimum : LibmF128AsLongDoubleImpls;
+  defm fmaximum : LibmF128AsLongDoubleImpls;
+  defm fminimum : LibmF128AsLongDoubleImpls;
+  defm fmaximum : LibmF128AsLongDoubleImpls;
+  defm asin : LibmF128AsLongDoubleImpls;
+  defm acos : LibmF128AsLongDoubleImpls;
+  defm atan : LibmF128AsLongDoubleImpls;
+  defm atan2 : LibmF128AsLongDoubleImpls;
+  defm ldexp : LibmF128AsLongDoubleImpls;
+  defm roundeven : LibmF128AsLongDoubleImpls;
+  defm modf : LibmF128AsLongDoubleImpls;
+  defm sinh : LibmF128AsLongDoubleImpls;
+  defm cosh : LibmF128AsLongDoubleImpls;
+  defm copysign : LibmF128AsLongDoubleImpls;
 }
 
 defset list<RuntimeLibcallImpl> LibmF128AsLongDoubleFiniteLibcalls = {
-  def __log_ld128_finite : RuntimeLibcallImpl<LOG_FINITE_F128, "__logl_finite">;
-  def __log2_ld128_finite : RuntimeLibcallImpl<LOG2_FINITE_F128, "__log2l_finite">;
-  def __log10_ld128_finite : RuntimeLibcallImpl<LOG10_FINITE_F128, "__log10l_finite">;
-  def __exp_ld128_finite : RuntimeLibcallImpl<EXP_FINITE_F128, "__expl_finite">;
-  def __exp2_ld128_finite : RuntimeLibcallImpl<EXP2_FINITE_F128, "__exp2l_finite">;
-  def __exp10_ld128_finite : RuntimeLibcallImpl<EXP10_FINITE_F128, "__exp10l_finite">;
-  def __pow_ld128_finite : RuntimeLibcallImpl<POW_FINITE_F128, "__powl_finite">;
+  defm __log_ld128_finite : LibmF128AsLongDoubleImpls<LOG_FINITE_F128, "__logl_finite">;
+  defm __log2_ld128_finite : LibmF128AsLongDoubleImpls<LOG2_FINITE_F128, "__log2l_finite">;
+  defm __log10_ld128_finite : LibmF128AsLongDoubleImpls<LOG10_FINITE_F128, "__log10l_finite">;
+  defm __exp_ld128_finite : LibmF128AsLongDoubleImpls<EXP_FINITE_F128, "__expl_finite">;
+  defm __exp2_ld128_finite : LibmF128AsLongDoubleImpls<EXP2_FINITE_F128, "__exp2l_finite">;
+  defm __exp10_ld128_finite : LibmF128AsLongDoubleImpls<EXP10_FINITE_F128, "__exp10l_finite">;
+  defm __pow_ld128_finite : LibmF128AsLongDoubleImpls<POW_FINITE_F128, "__powl_finite">;
 }
 
 //===----------------------------------------------------------------------===//
