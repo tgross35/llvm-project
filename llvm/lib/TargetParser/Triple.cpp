@@ -2306,16 +2306,16 @@ ExceptionHandling Triple::getDefaultExceptionHandling() const {
   return ExceptionHandling::None;
 }
 
-bool Triple::shouldLowerf128AsLongDouble() const {
+bool Triple::f128LibmShouldUseLongDouble() const {
   // Always prefer to lower to `*f128` symbols when they are likely to be
   // available, to avoid any inaccuracies or problems from libc config.
   //
   // Note that the logic should be kept in sync with Clang's LongDoubleFormat.
 
-  // Glibc helpfully aliases `*f128` symbols to `*l` symbols on platforms where
-  // that works, so use those.
-  if (isGNUEnvironment())
-    return false;
+  // // Glibc helpfully aliases `*f128` symbols to `*l` symbols on platforms where
+  // // that works, so use those.
+  // if (isGNUEnvironment())
+  //   return false;
 
   // Windows and Apple always use f64 as `long double`.
   if (isOSWindows() || isOSDarwin())
