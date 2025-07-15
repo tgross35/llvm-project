@@ -919,12 +919,26 @@ defvar DefaultRuntimeLibcallImpls_ppcf128 =
     !filter(entry, AllDefaultRuntimeLibcallImpls,
             !match(!cast<string>(entry.Provides), "PPCF128"));
 
+def FooBar = AvailableIf<>;
+          
 defvar DefaultRuntimeLibcallImpls =
 !listremove(
   !listremove(
     !listremove(AllDefaultRuntimeLibcallImpls, Int128RTLibcalls),
                 DefaultRuntimeLibcallImpls_f80),
                 DefaultRuntimeLibcallImpls_ppcf128);
+
+// // List of overriden libcalls as strings, `["ADD_F128", "SUB_F128", ...]`
+// defvar PPCOverriddenNames = !foreach(entry, PPCOverriddenRuntimeLibcalls,
+//                                      !cast<string>(entry.Provides));
+
+// // Default libcalls except for those that appear in `PPCOverrideNames`
+// defvar PPCNonOverriddenImpls = !filter(
+//     default_entry, DefaultRuntimeLibcallImpls,
+//     // `!contains` does not exist, `not->empty->filter` is a slightly hacky way
+//     !not(!empty(
+//         !filter(overridden, PPCOverriddenNames,
+//                 !eq(overridden, !cast<string>(default_entry.Provides))))));
 
 /// Default set of libcall impls for 32-bit architectures.
 defvar DefaultLibcallImpls32 = DefaultRuntimeLibcallImpls;
