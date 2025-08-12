@@ -7,6 +7,10 @@ import lit.Test
 import lit.util
 import lit.worker
 
+from multiprocessing.pool import AsyncResult
+from lit.Test import Test
+from lit.LitConfig import LitConfig
+
 
 class MaxFailuresError(Exception):
     pass
@@ -20,7 +24,13 @@ class Run(object):
     """A concrete, configured testing run."""
 
     def __init__(
-        self, tests, lit_config, workers, progress_callback, max_failures, timeout
+        self,
+        tests: list[Test],
+        lit_config: LitConfig,
+        workers: int,
+        progress_callback,
+        max_failures: int,
+        timeout: float,
     ):
         self.tests = tests
         self.lit_config = lit_config
@@ -30,7 +40,7 @@ class Run(object):
         self.timeout = timeout
         assert workers > 0
 
-    def execute(self):
+    def execute(self) -> None:
         """
         Execute the tests in the run using up to the specified number of
         parallel tasks, and inform the caller of each individual result. The
@@ -63,7 +73,7 @@ class Run(object):
                 if test.result is None:
                     test.setResult(skipped)
 
-    def _execute(self, deadline):
+    def _execute(self, deadline: float) -> None:
         self._increase_process_limit()
 
         semaphores = {
@@ -92,7 +102,7 @@ class Run(object):
         finally:
             pool.join()
 
-    def _wait_for(self, async_results, deadline):
+    def _wait_for(self, async_results: list[AsyncResult], deadline: float) -> None:
         timeout = deadline - time.time()
         for idx, ar in enumerate(async_results):
             try:
@@ -109,7 +119,7 @@ class Run(object):
     # Update local test object "in place" from remote test object.  This
     # ensures that the original test object which is used for printing test
     # results reflects the changes.
-    def _update_test(self, local_test, remote_test):
+    def _update_test(self, local_test, remote_test) -> None:
         # Needed for getMissingRequiredFeatures()
         local_test.requires = remote_test.requires
         local_test.result = remote_test.result
@@ -118,7 +128,7 @@ class Run(object):
     # Some tests use threads internally, and at least on Linux each of these
     # threads counts toward the current process limit. Try to raise the (soft)
     # process limit so that tests don't fail due to resource exhaustion.
-    def _increase_process_limit(self):
+    def _increase_process_limit(self) -> None:
         ncpus = lit.util.usable_core_count()
         desired_limit = self.workers * ncpus * 2  # the 2 is a safety factor
 

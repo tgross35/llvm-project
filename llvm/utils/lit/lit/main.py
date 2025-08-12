@@ -4,6 +4,7 @@ lit - LLVM Integrated Tester.
 See lit.pod for more information.
 """
 
+from argparse import Namespace
 import itertools
 import os
 import platform
@@ -18,8 +19,10 @@ import lit.reports
 import lit.run
 import lit.Test
 import lit.util
-from lit.formats.googletest import GoogleTest
+from lit.LitConfig import LitConfig
+from lit.Test import Test
 from lit.TestTimes import record_test_times
+from lit.formats.googletest import GoogleTest
 
 
 def main(builtin_params={}):
@@ -45,9 +48,7 @@ def main(builtin_params={}):
         maxRetriesPerTest=opts.maxRetriesPerTest,
     )
 
-    discovered_tests = lit.discovery.find_tests_for_inputs(
-        lit_config, opts.test_paths
-    )
+    discovered_tests = lit.discovery.find_tests_for_inputs(lit_config, opts.test_paths)
     if not discovered_tests:
         sys.stderr.write("error: did not discover any tests for provided path(s)\n")
         sys.exit(2)
@@ -251,7 +252,9 @@ def mark_excluded(discovered_tests, selected_tests):
         t.setResult(result)
 
 
-def run_tests(tests, lit_config, opts, discovered_tests):
+def run_tests(
+    tests: list[Test], lit_config: LitConfig, opts: Namespace, discovered_tests: int
+) -> None:
     workers = min(len(tests), opts.workers)
     display = lit.display.create_display(opts, tests, discovered_tests, workers)
 
@@ -359,7 +362,7 @@ def print_summary(total_tests, tests_by_code, quiet, elapsed):
     max_label_len = max(len(label) for label, _ in groups)
     max_count_len = max(len(str(count)) for _, count in groups)
 
-    for (label, count) in groups:
+    for label, count in groups:
         label = label.ljust(max_label_len)
         count = str(count).rjust(max_count_len)
         print("  %s: %s (%.2f%%)" % (label, count, float(count) / total_tests * 100))

@@ -57,7 +57,7 @@ def to_bytes(s):
     return s.encode("utf-8")
 
 
-def to_string(b):
+def to_string(b: str | bytes) -> str:
     """Return the parameter as type 'str', possibly encoding it.
 
     In Python2, the 'str' type is the same as 'bytes'. In Python3, the
@@ -96,7 +96,7 @@ def to_string(b):
         raise TypeError("not sure how to convert %s to %s" % (type(b), str))
 
 
-def to_unicode(s):
+def to_unicode(s: str | bytes) -> str:
     """Return the parameter as type which supports unicode, possibly decoding
     it.
 
@@ -110,7 +110,7 @@ def to_unicode(s):
     return s
 
 
-def usable_core_count():
+def usable_core_count() -> int:
     """Return the number of cores the current process can use, if supported.
     Otherwise, return the total number of cores (like `os.cpu_count()`).
     Default to 1 if undetermined.
@@ -128,10 +128,9 @@ def usable_core_count():
 
     return n
 
-def abs_path_preserve_drive(path):
-    """Return the absolute path without resolving drive mappings on Windows.
 
-    """
+def abs_path_preserve_drive(path: str) -> str:
+    """Return the absolute path without resolving drive mappings on Windows."""
     if platform.system() == "Windows":
         # Windows has limitations on path length (MAX_PATH) that
         # can be worked around using substitute drives, which map
@@ -146,7 +145,8 @@ def abs_path_preserve_drive(path):
         # links in paths and we should always use os.path.realpath.
         return os.path.realpath(path)
 
-def mkdir(path):
+
+def mkdir(path: str) -> None:
     try:
         if platform.system() == "Windows":
             from ctypes import windll
@@ -444,7 +444,7 @@ def addAIXVersion(target_triple):
     """Add the AIX version to the given target triple,
     e.g. powerpc64-ibm-aix7.2.5.6
     """
-    os_cmd = "oslevel -s | awk -F\'-\' \'{printf \"%.1f.%d.%d\", $1/1000, $2, $3}\'"
+    os_cmd = "oslevel -s | awk -F'-' '{printf \"%.1f.%d.%d\", $1/1000, $2, $3}'"
     os_version = subprocess.run(os_cmd, capture_output=True, shell=True).stdout.decode()
     return re.sub("aix", "aix" + os_version, target_triple)
 

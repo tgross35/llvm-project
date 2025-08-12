@@ -1,7 +1,12 @@
 import sys
 
+from lit.Test import Test
+from lit.ProgressBar import ProgressBar, SimpleProgressBar
 
-def create_display(opts, tests, total_tests, workers):
+
+def create_display(
+    opts, tests: list[Test], total_tests: int, workers: int
+) -> "Display | NopDisplay":
     if opts.quiet:
         return NopDisplay()
 
@@ -77,7 +82,13 @@ class NopDisplay(object):
 
 
 class Display(object):
-    def __init__(self, opts, tests, header, progress_bar):
+    def __init__(
+        self,
+        opts,
+        tests,
+        header: str | None,
+        progress_bar: ProgressBar | SimpleProgressBar | None,
+    ):
         self.opts = opts
         self.num_tests = len(tests)
         self.header = header
@@ -85,13 +96,13 @@ class Display(object):
         self.progress_bar = progress_bar
         self.completed = 0
 
-    def print_header(self):
+    def print_header(self) -> None:
         if self.header:
             print(self.header)
         if self.progress_bar:
             self.progress_bar.update(0.0, "")
 
-    def update(self, test):
+    def update(self, test: Test) -> None:
         self.completed += 1
 
         show_result = (
@@ -110,14 +121,15 @@ class Display(object):
             percent = self.progress_predictor.update(test)
             self.progress_bar.update(percent, test.getFullName())
 
-    def clear(self, interrupted):
+    def clear(self, interrupted) -> None:
         if self.progress_bar:
             self.progress_bar.clear(interrupted)
 
-    def print_result(self, test):
+    def print_result(self, test: Test) -> None:
         # Show the test result line.
         test_name = test.getFullName()
 
+        assert test.result is not None
         extra_info = ""
         if test.result.attempts > 1:
             extra_info = f", {test.result.attempts} of {test.result.max_allowed_attempts} attempts"

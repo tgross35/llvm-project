@@ -4,6 +4,8 @@ from json import JSONEncoder
 
 from lit.BooleanExpression import BooleanExpression
 from lit.TestTimes import read_test_times
+from lit.TestingConfig import TestingConfig
+from lit.LitConfig import LitConfig
 
 # Test result codes.
 
@@ -213,7 +215,9 @@ class TestSuite:
     A test suite groups together a set of logically related tests.
     """
 
-    def __init__(self, name, source_root, exec_root, config):
+    def __init__(
+        self, name: str, source_root: str, exec_root: str, config: TestingConfig
+    ):
         self.name = name
         self.source_root = source_root
         self.exec_root = exec_root
@@ -222,10 +226,10 @@ class TestSuite:
 
         self.test_times = read_test_times(self)
 
-    def getSourcePath(self, components):
+    def getSourcePath(self, components: str) -> str:
         return os.path.join(self.source_root, *components)
 
-    def getExecPath(self, components):
+    def getExecPath(self, components: str) -> str:
         return os.path.join(self.exec_root, *components)
 
 
@@ -233,7 +237,12 @@ class Test:
     """Test - Information on a single test instance."""
 
     def __init__(
-        self, suite, path_in_suite, config, file_path=None, gtest_json_file=None
+        self,
+        suite: TestSuite,
+        path_in_suite: str,
+        config: LitConfig,
+        file_path=None,
+        gtest_json_file=None,
     ):
         self.suite = suite
         self.path_in_suite = path_in_suite
@@ -304,7 +313,7 @@ class Test:
         assert self.result
         return self.result.code.isFailure
 
-    def getFullName(self):
+    def getFullName(self) -> str:
         return self.suite.config.name + " :: " + "/".join(self.path_in_suite)
 
     def getFilePath(self):

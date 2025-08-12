@@ -5,12 +5,23 @@ Test discovery functions.
 import copy
 import os
 import sys
+from typing import Generator, Tuple
 
+from Test import TestSuite
+from lit import Test, util
+from lit.LitConfig import LitConfig
 from lit.TestingConfig import TestingConfig
-from lit import LitConfig, Test, util
 
 
-def chooseConfigFileFromDir(dir, config_names):
+LocalConfigCache = dict[Tuple[TestSuite, str], TestingConfig]
+"""{ (suite, subpath) => config }"""
+
+TestSuiteCacheEntry = Tuple[Test.TestSuite | None, Tuple]
+TestSuiteCache = dict[str, TestSuiteCacheEntry]
+"""{ path => (suite, relative_path) }"""
+
+
+def chooseConfigFileFromDir(dir: str, config_names: list[str]) -> str | None:
     for name in config_names:
         p = os.path.join(dir, name)
         if os.path.exists(p):
@@ -18,14 +29,16 @@ def chooseConfigFileFromDir(dir, config_names):
     return None
 
 
-def dirContainsTestSuite(path, lit_config):
+def dirContainsTestSuite(path: str, lit_config: LitConfig) -> str | None:
     cfgpath = chooseConfigFileFromDir(path, lit_config.site_config_names)
     if not cfgpath:
         cfgpath = chooseConfigFileFromDir(path, lit_config.config_names)
     return cfgpath
 
 
-def getTestSuite(item, litConfig, cache):
+def getTestSuite(
+    item, litConfig: LitConfig, cache: TestSuiteCache
+) -> TestSuiteCacheEntry:
     """getTestSuite(item, litConfig, cache) -> (suite, relative_path)
 
     Find the test suite containing @arg item.
@@ -35,7 +48,7 @@ def getTestSuite(item, litConfig, cache):
     relative path inside that suite.
     """
 
-    def search1(path):
+    def search1(path: str) -> TestSuiteCacheEntry:
         # Check for a site config or a lit config.
         cfgpath = dirContainsTestSuite(path, litConfig)
 
@@ -71,7 +84,7 @@ def getTestSuite(item, litConfig, cache):
         exec_root = util.abs_path_preserve_drive(cfg.test_exec_root or path)
         return Test.TestSuite(cfg.name, source_root, exec_root, cfg), ()
 
-    def search(path):
+    def search(path: str) -> TestSuiteCacheEntry:
         # Check for an already instantiated test suite.
         real_path = util.abs_path_preserve_drive(path)
         res = cache.get(real_path)
@@ -96,8 +109,10 @@ def getTestSuite(item, litConfig, cache):
     return ts, tuple(relative + tuple(components))
 
 
-def getLocalConfig(ts, path_in_suite, litConfig, cache):
-    def search1(path_in_suite):
+def getLocalConfig(
+    ts: TestSuite, path_in_suite: str, litConfig: LitConfig, cache: LocalConfigCache
+) -> TestingConfig:
+    def search1(path_in_suite: str) -> TestingConfig:
         # Get the parent config.
         if not path_in_suite:
             parent = ts.config
@@ -120,7 +135,7 @@ def getLocalConfig(ts, path_in_suite, litConfig, cache):
         config.load_from_path(cfgpath, litConfig)
         return config
 
-    def search(path_in_suite):
+    def search(path_in_suite: str) -> TestingConfig:
         key = (ts, path_in_suite)
         res = cache.get(key)
         if res is None:
@@ -130,7 +145,12 @@ def getLocalConfig(ts, path_in_suite, litConfig, cache):
     return search(path_in_suite)
 
 
-def getTests(path, litConfig, testSuiteCache, localConfigCache):
+def getTests(
+    path: str,
+    litConfig: LitConfig,
+    testSuiteCache: TestSuiteCache,
+    localConfigCache: LocalConfigCache,
+) -> Tuple[TestSuite | Tuple[()], Generator[Test.Test] | Tuple[()]]:
     # Find the test suite for this input and its relative path.
     ts, path_in_suite = getTestSuite(path, litConfig, testSuiteCache)
     if ts is None:
@@ -150,8 +170,12 @@ def getTests(path, litConfig, testSuiteCache, localConfigCache):
 
 
 def getTestsInSuite(
-    ts, path_in_suite, litConfig, testSuiteCache, localConfigCache
-):
+    ts: TestSuite,
+    path_in_suite,
+    litConfig: LitConfig,
+    testSuiteCache: TestSuiteCache,
+    localConfigCache: LocalConfigCache,
+) -> Generator[Test.Test]:
     # Check that the source path exists (errors here are reported by the
     # caller).
     source_path = ts.getSourcePath(path_in_suite)
@@ -167,8 +191,11 @@ def getTestsInSuite(
         # always "find" the test itself. Otherwise, we might find no tests at
         # all, which is considered an error but isn't an error with standalone
         # tests.
-        tests = [Test.Test(ts, path_in_suite, lc)] if lc.test_format is None or lc.standalone_tests else \
-                lc.test_format.getTestsForPath(ts, path_in_suite, litConfig, lc)
+        tests = (
+            [Test.Test(ts, path_in_suite, lc)]
+            if lc.test_format is None or lc.standalone_tests
+            else lc.test_format.getTestsForPath(ts, path_in_suite, litConfig, lc)
+        )
 
         for test in tests:
             yield test
@@ -250,7 +277,7 @@ def getTestsInSuite(
             litConfig.warning("test suite %r contained no tests" % sub_ts.name)
 
 
-def find_tests_for_inputs(lit_config, inputs):
+def find_tests_for_inputs(lit_config: LitConfig, inputs: list[str]) -> list[Test.Test]:
     """
     find_tests_for_inputs(lit_config, inputs) -> [Test]
 
@@ -259,7 +286,7 @@ def find_tests_for_inputs(lit_config, inputs):
     """
 
     # Load the tests from the inputs.
-    tests = []
+    tests: list[Test.Test] = []
     test_suite_cache = {}
     local_config_cache = {}
     for input in inputs:

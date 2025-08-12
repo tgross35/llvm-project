@@ -1,6 +1,8 @@
 import os
 import sys
 
+from llvm.utils.lit.lit.LitConfig import LitConfig
+
 
 class TestingConfig(object):
     """
@@ -119,7 +121,7 @@ class TestingConfig(object):
             standalone_tests=False,
         )
 
-    def load_from_path(self, path, litConfig):
+    def load_from_path(self, path: str, litConfig: LitConfig) -> None:
         """
         load_from_path(path, litConfig)
 

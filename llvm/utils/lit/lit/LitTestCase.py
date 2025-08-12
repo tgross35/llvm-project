@@ -15,7 +15,7 @@ class UnresolvedError(RuntimeError):
 
 
 class LitTestCase(unittest.TestCase):
-    def __init__(self, test, lit_config):
+    def __init__(self, test, lit_config: lit.LitConfig.LitConfig):
         unittest.TestCase.__init__(self)
         self._test = test
         self._lit_config = lit_config
@@ -37,7 +37,7 @@ class LitTestCase(unittest.TestCase):
             self.fail(result.output)
 
 
-def load_test_suite(inputs):
+def load_test_suite(inputs: list[str]):
     import platform
 
     windows = platform.system() == "Windows"
